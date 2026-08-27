@@ -34,16 +34,20 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Discover and refresh target universe
         run: python seed_targets.py
-      - name: Run resumable research
+      - name: Run resumable research for this shift
+        continue-on-error: true
         run: |
           mkdir -p output
-          python agent.py targets.csv --out output --resume
+          timeout 300m python agent.py targets.csv --out output --resume
       - name: Write heartbeat
         if: always()
         run: |
           date -u +%Y-%m-%dT%H:%M:%SZ > output/last_heartbeat.txt
           wc -l output/checkpoint.jsonl 2>/dev/null > output/progress.txt || true
           wc -l targets.csv >> output/progress.txt || true
+      - name: Email final tables only if all targets are done
+        if: always()
+        run: python send_results.py
       - name: Commit targets, checkpoint and results
         if: always()
         run: |
@@ -70,6 +74,3 @@ jobs:
             targets.csv
           if-no-files-found: warn
           retention-days: 30
-      - name: Email final tables when run completes
-        if: success()
-        run: python send_results.py
