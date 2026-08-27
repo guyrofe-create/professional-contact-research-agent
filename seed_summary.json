@@ -1,9 +1,142 @@
 {
-  "total":818,
-  "moh_gynecology":0,
-  "ima_gynecology":363,
-  "categories":{
-    "lactation":455,
-    "gynecologist":363
-  }
+  "total": 1270,
+  "moh_gynecology": 0,
+  "ima_gynecology": 363,
+  "categories": {
+    "lactation": 456,
+    "gynecologist": 363,
+    "doula": 38,
+    "midwife": 37,
+    "community_manager": 30,
+    "birth_center": 29,
+    "women_health_creator": 28,
+    "embryologist": 27,
+    "childbirth_educator": 24,
+    "instagram_creator": 23,
+    "pregnancy_dietitian": 23,
+    "facebook_group_admin": 22,
+    "fertility_consultant": 16,
+    "perinatal_mental_health": 16,
+    "parenting_center": 15,
+    "parenting_site": 15,
+    "sleep_consultant": 13,
+    "fertility_doctor": 12,
+    "ivf_unit": 12,
+    "doula_school": 11,
+    "pelvic_floor": 11,
+    "sperm_bank": 10,
+    "fertility_association": 9,
+    "fertility_center": 7,
+    "fertility_nurse": 7,
+    "pregnancy_podcast": 7,
+    "childbirth_school": 5,
+    "fertility_preservation": 4
+  },
+  "discovery": {
+    "doula": {
+      "added_raw": 56,
+      "errors": []
+    },
+    "midwife": {
+      "added_raw": 56,
+      "errors": []
+    },
+    "childbirth_educator": {
+      "added_raw": 50,
+      "errors": []
+    },
+    "birth_center": {
+      "added_raw": 33,
+      "errors": []
+    },
+    "fertility_doctor": {
+      "added_raw": 13,
+      "errors": []
+    },
+    "ivf_unit": {
+      "added_raw": 7,
+      "errors": []
+    },
+    "fertility_center": {
+      "added_raw": 7,
+      "errors": []
+    },
+    "embryologist": {
+      "added_raw": 27,
+      "errors": []
+    },
+    "fertility_nurse": {
+      "added_raw": 7,
+      "errors": []
+    },
+    "fertility_consultant": {
+      "added_raw": 16,
+      "errors": []
+    },
+    "sperm_bank": {
+      "added_raw": 8,
+      "errors": []
+    },
+    "fertility_preservation": {
+      "added_raw": 7,
+      "errors": []
+    },
+    "fertility_association": {
+      "added_raw": 7,
+      "errors": []
+    },
+    "pelvic_floor": {
+      "added_raw": 14,
+      "errors": []
+    },
+    "sleep_consultant": {
+      "added_raw": 14,
+      "errors": []
+    },
+    "pregnancy_dietitian": {
+      "added_raw": 30,
+      "errors": []
+    },
+    "parenting_center": {
+      "added_raw": 16,
+      "errors": []
+    },
+    "perinatal_mental_health": {
+      "added_raw": 17,
+      "errors": []
+    },
+    "facebook_group_admin": {
+      "added_raw": 23,
+      "errors": []
+    },
+    "community_manager": {
+      "added_raw": 33,
+      "errors": []
+    },
+    "instagram_creator": {
+      "added_raw": 23,
+      "errors": []
+    },
+    "parenting_site": {
+      "added_raw": 13,
+      "errors": []
+    },
+    "pregnancy_podcast": {
+      "added_raw": 7,
+      "errors": []
+    },
+    "doula_school": {
+      "added_raw": 14,
+      "errors": []
+    },
+    "childbirth_school": {
+      "added_raw": 7,
+      "errors": []
+    },
+    "women_health_creator": {
+      "added_raw": 32,
+      "errors": []
+    }
+  },
+  "zero_result_categories": []
 }
