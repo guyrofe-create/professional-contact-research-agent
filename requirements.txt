@@ -2,4 +2,4 @@ beautifulsoup4>=4.12
 requests>=2.32
 pandas>=2.2
 openpyxl>=3.1
-duckduckgo-search>=7.0
+ddgs>=9.0
