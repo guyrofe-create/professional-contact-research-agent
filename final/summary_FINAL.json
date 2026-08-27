@@ -1,0 +1,12 @@
+{
+  "total_targets": 452,
+  "found": 104,
+  "not_found": 348,
+  "unique_emails": 65,
+  "by_category": {
+    "lactation": {
+      "FOUND": 104,
+      "NO_PUBLIC_EMAIL_FOUND": 348
+    }
+  }
+}
