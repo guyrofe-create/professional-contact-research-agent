@@ -2,6 +2,12 @@ name: Autonomous Contact Research
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'agent.py'
+      - 'seed_targets.py'
+      - '.github/workflows/research.yml'
   schedule:
     - cron: '17 * * * *'
       timezone: 'Asia/Jerusalem'
@@ -26,48 +32,69 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Discover and refresh target universe
+
+      - name: Discover and validate target universe
         run: python seed_targets.py
-      - name: Run resumable research for this shift
+
+      - name: Run corrected resumable research for this shift
         continue-on-error: true
         run: |
           mkdir -p output
           timeout 300m python agent.py targets.csv --out output --resume
+
       - name: Write heartbeat and completion state
         if: always()
         run: |
+          mkdir -p output
           date -u +%Y-%m-%dT%H:%M:%SZ > output/last_heartbeat.txt
           python - <<'PY'
           from pathlib import Path
-          import json
-          targets=max(0, sum(1 for _ in open('targets.csv',encoding='utf-8-sig'))-1) if Path('targets.csv').exists() else 0
-          done=sum(1 for _ in open('output/checkpoint.jsonl',encoding='utf-8')) if Path('output/checkpoint.jsonl').exists() else 0
+          import csv,json
+          targets=0
+          if Path('targets.csv').exists():
+              with open('targets.csv',encoding='utf-8-sig') as f: targets=sum(1 for _ in csv.DictReader(f))
+          keys=set()
+          cp=Path('output/checkpoint.jsonl')
+          if cp.exists():
+              for line in cp.read_text(encoding='utf-8').splitlines():
+                  try:
+                      r=json.loads(line)
+                      if r.get('algo_version')==2: keys.add((r.get('name',''),r.get('category','')))
+                  except Exception: pass
+          done=len(keys)
           Path('output/progress.txt').write_text(f'completed={done}\ntargets={targets}\n',encoding='utf-8')
           complete=targets>0 and done>=targets
-          Path('output/COMPLETE.txt').write_text(('COMPLETE' if complete else 'IN_PROGRESS')+f'\ncompleted={done}\ntargets={targets}\n',encoding='utf-8')
+          Path('output/COMPLETE.txt').write_text(('COMPLETE' if complete else 'IN_PROGRESS')+f'\ncompleted={done}\ntargets={targets}\nalgo_version=2\n',encoding='utf-8')
           print(f'completed={done} targets={targets} complete={complete}')
           PY
-      - name: Create final repository copy when complete
+
+      - name: Create final repository copy only when corrected universe is complete
         if: always()
         run: |
           mkdir -p final
-          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null; then
+          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=2$' output/COMPLETE.txt 2>/dev/null; then
             cp output/contacts.xlsx final/contacts_FINAL.xlsx
             cp output/audit.xlsx final/audit_FINAL.xlsx
+            cp output/review.xlsx final/review_FINAL.xlsx
             cp output/summary.json final/summary_FINAL.json
             cp output/COMPLETE.txt final/COMPLETE.txt
+            cp seed_summary.json final/seed_summary_FINAL.json
+          else
+            rm -f final/contacts_FINAL.xlsx final/audit_FINAL.xlsx final/review_FINAL.xlsx final/summary_FINAL.json final/COMPLETE.txt final/seed_summary_FINAL.json
           fi
-      - name: Commit targets, checkpoint and final results
+
+      - name: Commit targets, checkpoint, QA and final results
         if: always()
         run: |
           git config user.name 'contact-research-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add targets.csv output final || true
+          git add targets.csv seed_summary.json output final || true
           if ! git diff --cached --quiet; then
             git commit -m "Research checkpoint $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             git pull --rebase
             git push
           fi
+
       - name: Upload progress artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -76,11 +103,13 @@ jobs:
           path: |
             output/audit.xlsx
             output/contacts.xlsx
+            output/review.xlsx
             output/summary.json
             output/checkpoint.jsonl
             output/last_heartbeat.txt
             output/progress.txt
             output/COMPLETE.txt
+            seed_summary.json
             final/
             targets.csv
           if-no-files-found: warn
