@@ -1,5 +1,6 @@
 from __future__ import annotations
 import argparse, json, re, time, unicodedata
+from functools import lru_cache
 from collections import Counter
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -16,6 +17,8 @@ CONTACT_WORDS=('contact','about','team','staff','doctor','clinic','faculty','pro
 CATEGORY_CONFIG={
 'gynecologist':{'priority':'A','terms':['יילוד וגינקולוגיה','רופא נשים','גינקולוג'],'kind':'person'},'fertility_doctor':{'priority':'A','terms':['פוריות IVF','פריון','שימור פוריות'],'kind':'person'},'ivf_unit':{'priority':'A','terms':['יחידת IVF','הפריה חוץ גופית','יחידת פוריות'],'kind':'org'},'fertility_center':{'priority':'A','terms':['מרכז פוריות','מרפאת פוריות','שימור פוריות'],'kind':'org'},'embryologist':{'priority':'A','terms':['אמבריולוג','אמבריולוגית','embryologist IVF'],'kind':'person'},'fertility_nurse':{'priority':'A','terms':['אחות פוריות','אחות IVF','אחות פריון'],'kind':'person'},'fertility_consultant':{'priority':'A','terms':['יועצת פוריות','יועץ פוריות'],'kind':'person'},'sperm_bank':{'priority':'A','terms':['בנק זרע'],'kind':'org'},'fertility_preservation':{'priority':'A','terms':['שימור פוריות'],'kind':'org'},'fertility_association':{'priority':'A','terms':['עמותת פוריות','ארגון פוריות'],'kind':'org'},'doula':{'priority':'A','terms':['דולה','doula'],'kind':'person'},'midwife':{'priority':'A','terms':['מיילדת עצמאית','מיילדת פרטית'],'kind':'person'},'childbirth_educator':{'priority':'A','terms':['מדריכת הכנה ללידה','הכנה ללידה'],'kind':'person'},'birth_center':{'priority':'A','terms':['מרכז לידה','מרכז הריון ולידה'],'kind':'org'},'lactation':{'priority':'B','terms':['יועצת הנקה IBCLC'],'kind':'person'},'pelvic_floor':{'priority':'B','terms':['פיזיותרפיסטית רצפת אגן','פיזיותרפיה רצפת אגן'],'kind':'person'},'sleep_consultant':{'priority':'B','terms':['יועצת שינה תינוקות'],'kind':'person'},'pregnancy_dietitian':{'priority':'B','terms':['דיאטנית הריון','דיאטנית פוריות'],'kind':'person'},'parenting_center':{'priority':'B','terms':['מרכז הורות','מרכז הורים ותינוקות'],'kind':'org'},'perinatal_mental_health':{'priority':'B','terms':['פסיכולוגית הריון','טיפול רגשי פוריות'],'kind':'person'},'facebook_group_admin':{'priority':'C','terms':['קבוצת פייסבוק הריון לידה','קבוצת פייסבוק פוריות'],'kind':'community'},'community_manager':{'priority':'C','terms':['קהילת הריון','קהילת פוריות'],'kind':'community'},'instagram_creator':{'priority':'C','terms':['אינסטגרם הריון לידה','אינסטגרם פוריות'],'kind':'creator'},'parenting_site':{'priority':'C','terms':['אתר הורות','פורטל הריון ולידה'],'kind':'org'},'pregnancy_podcast':{'priority':'C','terms':['פודקאסט הריון','פודקאסט פוריות'],'kind':'creator'},'doula_school':{'priority':'C','terms':['בית ספר לדולות','קורס דולות'],'kind':'org'},'childbirth_school':{'priority':'C','terms':['בית ספר הכנה ללידה','קורס מדריכות הכנה ללידה'],'kind':'org'},'women_health_creator':{'priority':'C','terms':['יוצרת תוכן בריאות האישה','בלוג הריון לידה'],'kind':'creator'}}
 HEADERS={'User-Agent':'Mozilla/5.0 (compatible; ProfessionalContactResearch/3.0; public-contact-research)'}
+SESSION=requests.Session()
+SESSION.headers.update(HEADERS)
 def norm(s):return re.sub(r'[^a-z0-9\u0590-\u05ff]+',' ',unicodedata.normalize('NFKD',str(s or '')).lower()).strip()
 def tokens(s):return [x for x in norm(s).split() if len(x)>=2 and x not in {'דר','פרופ','doctor','prof'}]
 def norm_email(e):return e.strip(' <>[](){}.,;:\"\'').lower()
@@ -45,9 +48,10 @@ def search_web(name,category,max_results=10):
     if emitted>=40:return
   except Exception as e:print('SEARCH_WARNING',type(e).__name__,str(e)[:160],flush=True)
   time.sleep(.1)
+@lru_cache(maxsize=512)
 def fetch(url):
  try:
-  r=requests.get(url,headers=HEADERS,timeout=(5,10),allow_redirects=True)
+  r=SESSION.get(url,timeout=(5,10),allow_redirects=True)
   if r.status_code==200 and 'text/html' in r.headers.get('content-type','text/html'):return r.url,r.text
  except requests.RequestException:pass
  return url,''
@@ -95,8 +99,6 @@ def research(row):
     for e,ctx,_ in items2:
      sc=candidate_score(e,u2,t2,title2,ctx,name,category)
      if sc is not None:candidates.append((sc,e,u2,ctx[:300]))
-  # Stop only after strong name/evidence agreement; otherwise continue through the full original search depth.
-  if candidates and max(x[0] for x in candidates)>=90:break
   time.sleep(.05)
  candidates=sorted(set(candidates),reverse=True);base={'algo_version':ALGO_VERSION,'name':name,'category':category,'priority':cfg.get('priority',''),'target_kind':cfg.get('kind','')}
  if candidates:
