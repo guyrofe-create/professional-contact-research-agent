@@ -22,8 +22,8 @@ GENERIC_LOCAL = {"info", "office", "clinic", "contact", "mail", "reception", "ad
 FREE_MAIL = {"gmail.com", "walla.co.il", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "bezeqint.net", "012.net.il", "netvision.net.il"}
 BLOCKED_DOMAINS = {
     "google.com", "youtube.com", "wikipedia.org", "wiktionary.org", "linkedin.com", "rocketreach.co",
-    "zoominfo.com", "stockanalysis.com", "yahoo.com", "investing.com", "facebook.com", "instagram.com",
-    "tiktok.com", "pinterest.com", "x.com", "twitter.com", "mako.co.il", "ynet.co.il", "maariv.co.il",
+    "zoominfo.com", "stockanalysis.com", "yahoo.com", "investing.com", "pinterest.com",
+    "mako.co.il", "ynet.co.il", "maariv.co.il",
     "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br",
     "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com",
 }
