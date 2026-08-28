@@ -7,10 +7,12 @@ on:
     paths:
       - 'agent.py'
       - 'seed_targets.py'
+      - 'sitecustomize.py'
+      - 'test_agent.py'
       - 'requirements.txt'
       - '.github/workflows/research.yml'
   schedule:
-    - cron: '17 * * * *'
+    - cron: '17 */6 * * *'
       timezone: 'Asia/Jerusalem'
 
 permissions:
@@ -18,8 +20,7 @@ permissions:
 
 concurrency:
   group: contact-research
-  cancel-in-progress: false
-  queue: max
+  cancel-in-progress: true
 
 jobs:
   research:
@@ -35,14 +36,15 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Discover and validate target universe
+      - name: Validate identity and email rules
+        run: python -m unittest -v test_agent.py
+      - name: Discover and retain target universe
         run: python seed_targets.py
-      - name: Run corrected resumable research for this shift
-        continue-on-error: true
+      - name: Run resumable verified research shift
         run: |
           mkdir -p output
-          timeout 300m python agent.py targets.csv --out output --resume
-      - name: Write heartbeat and completion state
+          timeout 300m python agent.py targets.csv --out output --resume || test $? -eq 124
+      - name: Write completion state
         if: always()
         run: |
           mkdir -p output
@@ -50,27 +52,26 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import csv,json
-          VERSION=3
-          targets=0
-          if Path('targets.csv').exists():
-              with open('targets.csv',encoding='utf-8-sig') as f: targets=sum(1 for _ in csv.DictReader(f))
+          VERSION=4
+          with open('targets.csv',encoding='utf-8-sig') as f:
+              targets=sum(1 for _ in csv.DictReader(f))
           keys=set(); cp=Path('output/checkpoint.jsonl')
           if cp.exists():
-              for line in cp.read_text(encoding='utf-8').splitlines():
+              for line in cp.read_text(encoding='utf-8',errors='ignore').splitlines():
                   try:
-                      r=json.loads(line)
-                      if r.get('algo_version')==VERSION: keys.add((r.get('name',''),r.get('category','')))
+                      row=json.loads(line)
+                      if row.get('algo_version')==VERSION: keys.add((row.get('name',''),row.get('category','')))
                   except Exception: pass
           done=len(keys); complete=targets>0 and done>=targets
-          Path('output/progress.txt').write_text(f'completed={done}\ntargets={targets}\n',encoding='utf-8')
+          Path('output/progress.txt').write_text(f'completed={done}\ntargets={targets}\nalgo_version={VERSION}\n',encoding='utf-8')
           Path('output/COMPLETE.txt').write_text(('COMPLETE' if complete else 'IN_PROGRESS')+f'\ncompleted={done}\ntargets={targets}\nalgo_version={VERSION}\n',encoding='utf-8')
           print(f'completed={done} targets={targets} complete={complete}')
           PY
-      - name: Create final repository copy only when corrected universe is complete
+      - name: Create final copy only after full verified pass
         if: always()
         run: |
           mkdir -p final
-          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=3$' output/COMPLETE.txt 2>/dev/null; then
+          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=4$' output/COMPLETE.txt 2>/dev/null; then
             cp output/contacts.xlsx final/contacts_FINAL.xlsx
             cp output/audit.xlsx final/audit_FINAL.xlsx
             cp output/review.xlsx final/review_FINAL.xlsx
@@ -78,14 +79,14 @@ jobs:
             cp output/COMPLETE.txt final/COMPLETE.txt
             cp seed_summary.json final/seed_summary_FINAL.json
           else
-            rm -f final/contacts_FINAL.xlsx final/audit_FINAL.xlsx final/review_FINAL.xlsx final/summary_FINAL.json final/COMPLETE.txt final/seed_summary_FINAL.json
+            rm -f final/*_FINAL.*
           fi
-      - name: Commit targets, checkpoint, QA and final results
+      - name: Commit checkpoint and QA outputs
         if: always()
         run: |
           git config user.name 'contact-research-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add targets.csv seed_summary.json output final || true
+          git add targets.csv seed_summary.json output final live || true
           if ! git diff --cached --quiet; then
             git commit -m "Research checkpoint $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             git pull --rebase
@@ -97,14 +98,7 @@ jobs:
         with:
           name: contact-research-${{ github.run_id }}
           path: |
-            output/audit.xlsx
-            output/contacts.xlsx
-            output/review.xlsx
-            output/summary.json
-            output/checkpoint.jsonl
-            output/last_heartbeat.txt
-            output/progress.txt
-            output/COMPLETE.txt
+            output/
             seed_summary.json
             final/
             targets.csv
