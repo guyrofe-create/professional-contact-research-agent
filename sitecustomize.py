@@ -69,13 +69,15 @@ def _github_put(path: str, text: str, message: str) -> None:
         }
         if sha:
             payload["sha"] = sha
-        requests.put(api, headers=headers, json=payload, timeout=20)
+        response = requests.put(api, headers=headers, json=payload, timeout=20)
+        if response.status_code not in (200, 201):
+            print("LIVE_PROGRESS_WARNING", response.status_code, response.text[:160], flush=True)
     except Exception as exc:
         print("LIVE_PROGRESS_WARNING", type(exc).__name__, str(exc)[:160], flush=True)
 
 
 def _publish_loop() -> None:
-    last = None
+    last_progress = None
     while True:
         time.sleep(INTERVAL_SECONDS)
         completed = _count_completed()
@@ -89,10 +91,10 @@ def _publish_loop() -> None:
             Path("output/last_heartbeat.txt").write_text(heartbeat, encoding="utf-8")
         except Exception:
             pass
-        if state != last:
+        _github_put("output/last_heartbeat.txt", heartbeat, "Live research heartbeat")
+        if state != last_progress:
             _github_put("output/progress.txt", progress, f"Live research progress {completed}/{targets}")
-            _github_put("output/last_heartbeat.txt", heartbeat, "Live research heartbeat")
-            last = state
+            last_progress = state
 
 
 if _is_agent_run():
