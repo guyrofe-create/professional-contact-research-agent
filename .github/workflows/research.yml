@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: contact-research
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   research:
@@ -41,6 +41,8 @@ jobs:
       - name: Discover and retain target universe
         run: python seed_targets.py
       - name: Run resumable verified research shift
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           mkdir -p output
           timeout 300m python agent.py targets.csv --out output --resume || test $? -eq 124
