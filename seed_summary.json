@@ -1,44 +1,44 @@
 {
-  "total": 1270,
+  "total": 1256,
   "moh_gynecology": 0,
   "ima_gynecology": 363,
   "categories": {
     "lactation": 456,
     "gynecologist": 363,
-    "doula": 38,
-    "midwife": 37,
-    "community_manager": 30,
-    "birth_center": 29,
-    "women_health_creator": 28,
+    "midwife": 38,
+    "doula": 37,
+    "birth_center": 28,
     "embryologist": 27,
+    "women_health_creator": 27,
+    "pregnancy_dietitian": 25,
     "childbirth_educator": 24,
     "instagram_creator": 23,
-    "pregnancy_dietitian": 23,
-    "facebook_group_admin": 22,
+    "community_manager": 21,
+    "facebook_group_admin": 21,
     "fertility_consultant": 16,
     "perinatal_mental_health": 16,
     "parenting_center": 15,
-    "parenting_site": 15,
-    "sleep_consultant": 13,
+    "parenting_site": 14,
     "fertility_doctor": 12,
     "ivf_unit": 12,
     "doula_school": 11,
     "pelvic_floor": 11,
+    "sleep_consultant": 11,
     "sperm_bank": 10,
     "fertility_association": 9,
+    "fertility_nurse": 9,
     "fertility_center": 7,
-    "fertility_nurse": 7,
-    "pregnancy_podcast": 7,
-    "childbirth_school": 5,
-    "fertility_preservation": 4
+    "pregnancy_podcast": 6,
+    "childbirth_school": 4,
+    "fertility_preservation": 3
   },
   "discovery": {
     "doula": {
-      "added_raw": 56,
+      "added_raw": 53,
       "errors": []
     },
     "midwife": {
-      "added_raw": 56,
+      "added_raw": 58,
       "errors": []
     },
     "childbirth_educator": {
@@ -46,7 +46,7 @@
       "errors": []
     },
     "birth_center": {
-      "added_raw": 33,
+      "added_raw": 32,
       "errors": []
     },
     "fertility_doctor": {
@@ -66,7 +66,7 @@
       "errors": []
     },
     "fertility_nurse": {
-      "added_raw": 7,
+      "added_raw": 9,
       "errors": []
     },
     "fertility_consultant": {
@@ -106,11 +106,11 @@
       "errors": []
     },
     "facebook_group_admin": {
-      "added_raw": 23,
+      "added_raw": 22,
       "errors": []
     },
     "community_manager": {
-      "added_raw": 33,
+      "added_raw": 22,
       "errors": []
     },
     "instagram_creator": {
