@@ -65,6 +65,24 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertTrue(agent.blocked_url("https://www.google.com/search?q=name"))
         self.assertFalse(agent.blocked_url("https://www.ima.org.il/doctorprofile"))
 
+    def test_general_information_article_is_not_an_identity_source(self):
+        self.assertFalse(agent.allowed_identity_page(
+            "https://example.co.il/articles/dr-cohen-interview",
+            "ראיון עם דוד כהן גינקולוג",
+            "דוד כהן מומחה בגינקולוגיה",
+            "דוד כהן",
+            "gynecologist",
+        ))
+
+    def test_professional_directory_profile_is_allowed(self):
+        self.assertTrue(agent.allowed_identity_page(
+            "https://www.infomed.co.il/experts/12345/",
+            "דוד כהן רופא נשים",
+            "דוד כהן מומחה ביילוד וגינקולוגיה",
+            "דוד כהן",
+            "gynecologist",
+        ))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -27,6 +27,14 @@ BLOCKED_DOMAINS = {
     "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br",
     "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com",
 }
+TRUSTED_REGISTRIES = {
+    "ima.org.il", "practitioners.health.gov.il", "gov.il", "doctors.co.il", "infomed.co.il",
+    "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "maccabi4u.co.il", "clalit.co.il",
+    "meuhedet.co.il", "leumit.co.il", "sheba.co.il", "tasmc.org.il", "hadassah.org.il",
+    "rambam.org.il", "assuta.co.il", "hospitals.clalit.co.il", "ialp.org.il", "midwives.org.il",
+}
+GENERAL_CONTENT_PATHS = ("/article", "/articles", "/blog", "/news", "/magazine", "/forum", "/forums", "/podcast", "/כתבות", "/מאמר", "/חדשות", "/פורום")
+DIRECTORY_DOMAINS = ("doctors.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "ima.org.il")
 CONTACT_WORDS = ("contact", "about", "team", "staff", "doctor", "clinic", "profile", "צור-קשר", "צור קשר", "אודות", "צוות", "רופאים", "מרפאה")
 CATEGORY_CONFIG = {
     "gynecologist": {"priority": "A", "terms": ["יילוד", "גינקולוג", "רופא נשים", "מיילדות", "obstetric", "gynecolog"], "kind": "person"},
@@ -88,6 +96,25 @@ def blocked_url(url: str) -> bool:
     return not domain or any(domain == bad or domain.endswith("." + bad) for bad in BLOCKED_DOMAINS)
 
 
+def trusted_registry(url: str) -> bool:
+    domain = host(url)
+    return any(domain == trusted or domain.endswith("." + trusted) for trusted in TRUSTED_REGISTRIES)
+
+
+def allowed_identity_page(url: str, title: str, page_text: str, name: str, category: str) -> bool:
+    path = urlparse(url).path.lower()
+    if any(marker in path for marker in GENERAL_CONTENT_PATHS):
+        return False
+    identity_text = title + " " + page_text[:15000]
+    if not name_match(name, identity_text) or not category_match(category, identity_text):
+        return False
+    if trusted_registry(url):
+        return True
+    # An unknown domain is accepted only as the professional's own site/clinic:
+    # the exact identity and profession must be in its page title, not merely in body text.
+    return name_match(name, title) and category_match(category, title + " " + page_text[:4000])
+
+
 def norm_email(email: str) -> str:
     return email.strip(" <>[](){}.,;:\"'").lower().replace("\u00a0", "")
 
@@ -122,14 +149,19 @@ def local_name_match(email: str, name: str) -> bool:
 def search_queries(name: str, category: str) -> list[str]:
     terms = CATEGORY_CONFIG.get(category, {}).get("terms", [category])
     profession = " ".join(terms[:2])
-    return list(dict.fromkeys([
+    queries = [
         f'"{name}" {profession}',
         f'"{name}" {profession} מייל',
         f'"{name}" {profession} צור קשר',
         f'"{name}" {profession} אתר רשמי',
         f'"{name}" email',
         f'"{name}" contact',
-    ]))
+    ]
+    if category in {"gynecologist", "fertility_doctor"}:
+        queries += [f'"{name}" site:{domain}' for domain in DIRECTORY_DOMAINS]
+    elif CATEGORY_CONFIG.get(category, {}).get("kind") == "person":
+        queries += [f'"{name}" site:doctorita.co.il', f'"{name}" site:doctors.co.il', f'"{name}" site:infomed.co.il']
+    return list(dict.fromkeys(queries))
 
 
 def search_web(name: str, category: str, seed_source: str = "", max_results: int = 8):
@@ -246,7 +278,7 @@ def research(row: dict) -> dict:
         if not html:
             continue
         items, links, page_text, title = extract(url, html)
-        verified_site = name_match(name, title + " " + page_text[:15000]) and category_match(category, title + " " + page_text[:20000])
+        verified_site = allowed_identity_page(url, title, page_text, name, category)
         if not verified_site:
             continue
         for email, context, method in items:
