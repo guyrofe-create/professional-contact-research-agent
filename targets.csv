@@ -1393,11 +1393,14 @@ Medonna- נשים בשביל הבריאות,women_health_creator,https://il.link
 צוות,women_health_creator,https://www.briah.org/team,previous
 צוות המרכז לחקר וקידום בריאות האישה,women_health_creator,https://www.bgu.ac.il/u/research-centers/womancenter/staffmembers/,previous
 לידה בהדסה עין כרם,birth_center,https://he.hadassah.org.il/women/labor-enkarem/,web
+מרכז הלידה המתקדם,birth_center,https://www.jdn.co.il/womens-area/2346662/,web
 "אן-ולרי, דולה ומדריכת הכנה ללידה",childbirth_educator,https://www.doula4yourbirth.co.il/,web
 סדנת הכנה ללידה,childbirth_educator,https://www.maccabi4u.co.il/maccabi_circles/health-workshop/birth/,web
 הצטרפות לקבוצות וואטסאפ של קהילת יולדת,community_manager,https://www.yoledet.co.il/freewhatsappgroups/,web
 פורום טיפולי פוריות,community_manager,https://www.infomed.co.il/forums/1/,web
 פוריות האישה,community_manager,https://www.camoni.co.il/community/3010/,web
+פוריות ופריון,community_manager,https://www.leumit.co.il/fertility/,web
+תמיכה רגשית בטיפולי פוריות,community_manager,https://www.assuta.co.il/services/fertility/ivf/support/,web
 בית ספר לדולות,doula_school,https://asakim-hamim.co.il/בית-ספר-לדולות/,web
 את מי תזמיני להצטרף אליך אל חוויית הלידה?,facebook_group_admin,https://midwives.org.il/את-מי-תזמיני-להצטרף-אליך-אל-חוויית-הליד/,web
 "טיפולי פוריות, רווחה נפשית וקבוצות תמיכה וירטואליות",facebook_group_admin,https://www.biu.ac.il/article/430,web
@@ -1410,10 +1413,17 @@ Medonna- נשים בשביל הבריאות,women_health_creator,https://il.link
 "עמותת חן לפריון וחיים (ע""ר)",fertility_association,https://www.guidestar.org.il/organization/580320018/contact,web
 "ד""ר דוד איסקוב מרפאת פוריות",fertility_center,https://www.rofenashim.co.il/,web
 טיפולי פוריות בהתאמה אישית,fertility_consultant,https://www.greenfertility.co.il/,web
+רופאי פוריות נבחרים,fertility_consultant,https://www.poriyut-guide.com/chosen-doctors/,web
+IVF מרכז וולפסון לפוריות,fertility_doctor,https://www.nashim.net/?CategoryID=1146,web
+היחידה לפוריות והפריה חוץ גופית (IVF),fertility_doctor,https://hospitals.clalit.co.il/kaplan/he/med_units/women_maternity/Pages/ivf.aspx,web
+טיפולי פוריות בבתי החולים בישראל,fertility_doctor,https://hevra.org.il/טיפול-פוריות/,web
+יחידת פוריות והפריה חוץ גופית,fertility_doctor,https://hospitals.clalit.co.il/carmel/he/departments-and-outpatient-clinics-main/clinical-departments-and-clinics/obstetrics-and-gynecology/pregnancy-and-birth/towards-pregnancy/in-vitro-fertilization/Pages/in-vitro-fertilization.aspx,web
 מומחי הפריון של הדסה מגיעים למרכז,fertility_doctor,https://he.hadassah.org.il/hadassah-medical/fertility-specialists/,web
 IVF מרכז וולפסון לפוריות,fertility_nurse,https://www.nashim.net/?CategoryID=1146,web
 "אגודה הישראלית לחקר הפוריות איל""ה",instagram_creator,https://www.ayala.org.il/,web
 מיילדת בית,midwife,https://emadama.co.il/businesses/מיילדת-בית/,web
+הריון,parenting_site,https://www.yoledet.co.il/pregnancy/,web
+מחשבון הריון,parenting_site,https://www.yoledet.co.il/calculator/,web
 מחשבון תאריך לידה משוער,parenting_site,https://midwives.org.il/edd-calculation/,web
 פיזיותרפיה של האגן לנשים,pelvic_floor,https://www.medreviews.co.il/search/treatment/female-pelvic-physiotherapy,web
 פיזיותרפיסטיות רצפת האגן,pelvic_floor,https://pelvicfloor.co.il/רשימת-פיזיותרפיסטיות/,web
@@ -1421,3 +1431,12 @@ IVF מרכז וולפסון לפוריות,fertility_nurse,https://www.nashim.ne
 פיזיותרפיסטים מומלצים עם הכשרה ב שיקום רצפת האגן נשים,pelvic_floor,https://physio-tnoa.co.il/capabilities/שיקום-רצפת-האגן-נשים-פיזיותרפיסטים/,web
 פיזיותרפיסטית לרצפת אגן,pelvic_floor,https://www.omeryael.com/,web
 פיזיותרפיסטית רצפת אגן,pelvic_floor,https://www.midrag.co.il/Content/Tip/16813,web
+טיפולי פוריות בהתאמה אישית,pregnancy_dietitian,https://www.greenfertility.co.il/,web
+מזונות החשובים לפוריות מאת ד״ר קיי,pregnancy_dietitian,https://drk.co.il/מזונות-החשובים-לפוריות/,web
+ייעוץ הנקה ושינה,sleep_consultant,https://etikatz.co.il/services/breastfeeding-and-sleep-consultation/,web
+ייעוץ שינה בגישה שפויה ואחראית לכל גיל!,sleep_consultant,https://www.nofarlotvin.co.il/sleeping,web
+ייעוץ שינה לתינוקות 3-24 חודשים,sleep_consultant,https://suzisleep.co.il/courses_and_plans/baby-sleep-consulting/,web
+ייעוץ שינה לתינוקות ופעוטות,sleep_consultant,https://chenaseo.co.il/service/ייעוץ-שינה/,web
+ייעוץ שינה מוזל,sleep_consultant,https://inbaraviry.co.il/ייעוץ-שינה-מוזל/,web
+ארכיון בלוג,women_health_creator,https://www.gynsurg.co.il/category/בלוג/,web
+בלוג וטיפים,women_health_creator,https://www.ditamidwife.co.il/my-blog/page/2,web

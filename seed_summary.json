@@ -1,77 +1,85 @@
 {
-  "total": 1422,
-  "previous": 1393,
+  "total": 1441,
+  "previous": 1422,
   "moh_gynecology": 0,
   "ima_gynecology": 363,
   "categories": {
     "lactation": 456,
     "gynecologist": 363,
-    "birth_center": 42,
+    "birth_center": 43,
     "doula": 39,
     "facebook_group_admin": 38,
     "midwife": 38,
     "pelvic_floor": 35,
+    "community_manager": 32,
     "instagram_creator": 32,
-    "community_manager": 30,
     "embryologist": 30,
+    "fertility_doctor": 29,
     "childbirth_educator": 28,
-    "fertility_doctor": 25,
+    "pregnancy_dietitian": 24,
+    "women_health_creator": 24,
     "doula_school": 22,
-    "pregnancy_dietitian": 22,
-    "women_health_creator": 22,
     "sperm_bank": 19,
     "fertility_association": 18,
+    "sleep_consultant": 18,
     "ivf_unit": 17,
+    "parenting_site": 17,
     "fertility_center": 17,
-    "fertility_consultant": 16,
+    "fertility_consultant": 17,
     "parenting_center": 16,
     "perinatal_mental_health": 16,
-    "parenting_site": 15,
     "fertility_nurse": 15,
     "pregnancy_podcast": 15,
-    "sleep_consultant": 13,
     "childbirth_school": 12,
     "fertility_preservation": 11
   },
   "discovery": {
     "doula": {
-      "added_raw": 30,
+      "added_raw": 28,
       "errors": []
     },
     "midwife": {
-      "added_raw": 19,
+      "added_raw": 15,
       "errors": []
     },
     "childbirth_educator": {
-      "added_raw": 23,
+      "added_raw": 20,
       "errors": []
     },
     "birth_center": {
-      "added_raw": 11,
+      "added_raw": 18,
       "errors": []
     },
     "fertility_doctor": {
-      "added_raw": 16,
-      "errors": []
+      "added_raw": 8,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "ivf_unit": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
+    "fertility_center": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
+    "embryologist": {
       "added_raw": 2,
       "errors": []
     },
-    "fertility_center": {
-      "added_raw": 8,
-      "errors": []
-    },
-    "embryologist": {
-      "added_raw": 6,
-      "errors": []
-    },
     "fertility_nurse": {
-      "added_raw": 6,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "fertility_consultant": {
-      "added_raw": 8,
+      "added_raw": 3,
       "errors": []
     },
     "sperm_bank": {
@@ -79,27 +87,33 @@
       "errors": []
     },
     "fertility_preservation": {
-      "added_raw": 12,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "fertility_association": {
-      "added_raw": 8,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "pelvic_floor": {
-      "added_raw": 10,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "sleep_consultant": {
-      "added_raw": 9,
+      "added_raw": 6,
       "errors": []
     },
     "pregnancy_dietitian": {
-      "added_raw": 7,
+      "added_raw": 5,
       "errors": []
     },
     "parenting_center": {
-      "added_raw": 7,
+      "added_raw": 2,
       "errors": []
     },
     "perinatal_mental_health": {
@@ -107,35 +121,47 @@
       "errors": []
     },
     "facebook_group_admin": {
-      "added_raw": 18,
-      "errors": []
+      "added_raw": 2,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "community_manager": {
-      "added_raw": 16,
-      "errors": []
+      "added_raw": 4,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "instagram_creator": {
-      "added_raw": 9,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "parenting_site": {
-      "added_raw": 8,
+      "added_raw": 6,
       "errors": []
     },
     "pregnancy_podcast": {
-      "added_raw": 8,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "doula_school": {
-      "added_raw": 4,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "childbirth_school": {
-      "added_raw": 8,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "women_health_creator": {
-      "added_raw": 9,
+      "added_raw": 8,
       "errors": []
     }
   }

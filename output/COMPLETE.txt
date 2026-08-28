@@ -1,4 +1,4 @@
 IN_PROGRESS
-completed=235
-targets=1422
+completed=294
+targets=1441
 algo_version=4
