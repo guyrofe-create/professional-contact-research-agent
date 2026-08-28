@@ -27,22 +27,30 @@ def person_name_match(name,text):
 def local_name_match(email,name):
  local=norm(email.split('@')[0]).replace(' ','');return any(len(t)>=3 and t in local for t in tokens(name) if re.search('[a-z]',t))
 def search_queries(name,category):
- cfg=CATEGORY_CONFIG.get(category,{'terms':[category]});qs=[]
- for term in cfg['terms'][:3]:qs += [f'"{name}" {term} email',f'"{name}" {term} מייל',f'"{name}" {term} contact',f'"{name}" {term} אתר']
+ cfg=CATEGORY_CONFIG.get(category,{'terms':[category]});terms=cfg.get('terms') or [category]
+ # Start with high-signal direct-contact searches, then add at most two category-specific fallbacks.
+ qs=[f'"{name}" email',f'"{name}" מייל',f'"{name}" contact',f'"{name}" אתר רשמי']
+ for term in terms[:2]:qs.append(f'"{name}" {term}')
  return list(dict.fromkeys(qs))
-def search_web(name,category,max_results=10):
- out=[];seen=set();d=DDGS()
+def search_web(name,category,max_results=6):
+ out=[];seen=set();seen_domains=set();d=DDGS()
  for q in search_queries(name,category):
   try:
    for r in (d.text(q,region='il-he',safesearch='moderate',max_results=max_results) or []):
     u=r.get('href') or r.get('url')
-    if u and u not in seen:seen.add(u);out.append({'url':u,'title':r.get('title',''),'snippet':r.get('body',''),'query':q})
+    if not u or u in seen:continue
+    domain=urlparse(u).netloc.lower()
+    # Keep at most two landing pages per domain; contact pages are discovered from those pages.
+    if sum(1 for x in out if urlparse(x['url']).netloc.lower()==domain)>=2:continue
+    seen.add(u);seen_domains.add(domain);out.append({'url':u,'title':r.get('title',''),'snippet':r.get('body',''),'query':q})
+    if len(out)>=18:break
   except Exception as e:print('SEARCH_WARNING',type(e).__name__,str(e)[:160],flush=True)
-  time.sleep(.25)
- return out[:40]
+  if len(out)>=18:break
+  time.sleep(.1)
+ return out[:18]
 def fetch(url):
  try:
-  r=requests.get(url,headers=HEADERS,timeout=15,allow_redirects=True)
+  r=requests.get(url,headers=HEADERS,timeout=(5,10),allow_redirects=True)
   if r.status_code==200 and 'text/html' in r.headers.get('content-type','text/html'):return r.url,r.text
  except requests.RequestException:pass
  return url,''
@@ -83,14 +91,16 @@ def research(row):
   for e,ctx,_ in items:
    sc=candidate_score(e,u,text,title,ctx,name,category)
    if sc is not None:candidates.append((sc,e,u,ctx[:300]))
-  for link in links[:3]:
+  for link in links[:2]:
    u2,h2=fetch(link);attempts.append(u2)
    if h2:
     items2,_,t2,title2=extract(u2,h2)
     for e,ctx,_ in items2:
      sc=candidate_score(e,u2,t2,title2,ctx,name,category)
      if sc is not None:candidates.append((sc,e,u2,ctx[:300]))
-  time.sleep(.1)
+  # A score of 90 requires strong name/evidence agreement; further broad crawling adds little value.
+  if candidates and max(x[0] for x in candidates)>=90:break
+  time.sleep(.05)
  candidates=sorted(set(candidates),reverse=True);base={'algo_version':ALGO_VERSION,'name':name,'category':category,'priority':cfg.get('priority',''),'target_kind':cfg.get('kind','')}
  if candidates:
   sc,e,u,ctx=candidates[0];return base|{'email':e,'email_type':classify(e,category),'confidence':sc,'source_url':u,'status':'FOUND','evidence':ctx,'attempted_urls':json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
