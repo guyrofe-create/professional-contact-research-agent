@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: contact-research
@@ -149,3 +150,14 @@ jobs:
             targets.csv
           if-no-files-found: warn
           retention-days: 30
+      - name: Start next shift immediately if research is incomplete
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null; then
+            echo 'Research complete; no continuation needed.'
+            exit 0
+          fi
+          echo 'Research incomplete; dispatching the next shift.'
+          gh workflow run research.yml --ref main
