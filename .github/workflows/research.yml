@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: contact-research
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   research:
@@ -36,6 +36,32 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: pip install -r requirements.txt
+      - name: Validate persisted checkpoint
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+          VERSION=4
+          cp=Path('output/checkpoint.jsonl')
+          progress=Path('output/progress.txt')
+          expected=0
+          if progress.exists():
+              m=re.search(r'^completed=(\d+)$', progress.read_text(encoding='utf-8', errors='ignore'), re.M)
+              if m: expected=int(m.group(1))
+          keys=set()
+          if cp.exists():
+              for line in cp.read_text(encoding='utf-8', errors='ignore').splitlines():
+                  try:
+                      row=json.loads(line)
+                      if row.get('algo_version')==VERSION:
+                          keys.add((row.get('name',''), row.get('category','')))
+                  except Exception:
+                      pass
+          actual=len(keys)
+          print(f'checkpoint version={VERSION} completed={actual} expected_at_least={expected}')
+          if expected and actual < expected:
+              raise SystemExit(f'Safety stop: checkpoint regression {actual} < persisted progress {expected}')
+          PY
       - name: Validate identity and email rules
         run: python -m unittest -v test_agent.py
       - name: Discover and retain target universe
