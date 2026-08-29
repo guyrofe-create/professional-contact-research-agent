@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'agent.py'
+      - 'hospital_pass.py'
       - 'seed_targets.py'
       - 'sitecustomize.py'
       - 'test_agent.py'
@@ -66,12 +67,18 @@ jobs:
         run: python -m unittest -v test_agent.py
       - name: Discover and retain target universe
         run: python seed_targets.py
+      - name: Recheck unresolved clinicians on official hospital sites
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p output
+          timeout 45m python hospital_pass.py || test $? -eq 124
       - name: Run resumable verified research shift
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           mkdir -p output
-          timeout 300m python agent.py targets.csv --out output --resume || test $? -eq 124
+          timeout 250m python agent.py targets.csv --out output --resume || test $? -eq 124
       - name: Write completion state
         if: always()
         run: |
