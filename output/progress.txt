@@ -1,3 +1,3 @@
-completed=294
-targets=1441
+completed=780
+targets=1454
 algo_version=4
