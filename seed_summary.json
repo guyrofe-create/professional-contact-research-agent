@@ -1,6 +1,6 @@
 {
-  "total": 1463,
-  "previous": 1461,
+  "total": 1465,
+  "previous": 1463,
   "moh_gynecology": 0,
   "ima_gynecology": 363,
   "categories": {
@@ -27,31 +27,31 @@
     "sleep_consultant": 18,
     "ivf_unit": 17,
     "parenting_site": 17,
-    "fertility_nurse": 16,
+    "fertility_nurse": 17,
     "parenting_center": 16,
     "pregnancy_podcast": 16,
     "childbirth_school": 12,
-    "fertility_preservation": 11
+    "fertility_preservation": 12
   },
   "discovery": {
     "doula": {
-      "added_raw": 29,
-      "errors": []
-    },
-    "midwife": {
-      "added_raw": 12,
-      "errors": []
-    },
-    "childbirth_educator": {
       "added_raw": 10,
       "errors": []
     },
-    "birth_center": {
+    "midwife": {
       "added_raw": 4,
       "errors": []
     },
+    "childbirth_educator": {
+      "added_raw": 4,
+      "errors": []
+    },
+    "birth_center": {
+      "added_raw": 5,
+      "errors": []
+    },
     "fertility_doctor": {
-      "added_raw": 9,
+      "added_raw": 11,
       "errors": []
     },
     "ivf_unit": {
@@ -63,7 +63,7 @@
       "errors": []
     },
     "embryologist": {
-      "added_raw": 3,
+      "added_raw": 1,
       "errors": []
     },
     "fertility_nurse": {
@@ -71,7 +71,7 @@
       "errors": []
     },
     "fertility_consultant": {
-      "added_raw": 7,
+      "added_raw": 4,
       "errors": []
     },
     "sperm_bank": {
@@ -79,7 +79,7 @@
       "errors": []
     },
     "fertility_preservation": {
-      "added_raw": 6,
+      "added_raw": 7,
       "errors": []
     },
     "fertility_association": {
@@ -91,43 +91,43 @@
       "errors": []
     },
     "sleep_consultant": {
-      "added_raw": 10,
+      "added_raw": 4,
       "errors": []
     },
     "pregnancy_dietitian": {
-      "added_raw": 8,
+      "added_raw": 4,
       "errors": []
     },
     "parenting_center": {
-      "added_raw": 6,
+      "added_raw": 4,
       "errors": []
     },
     "perinatal_mental_health": {
-      "added_raw": 8,
+      "added_raw": 4,
       "errors": []
     },
     "facebook_group_admin": {
-      "added_raw": 12,
+      "added_raw": 11,
       "errors": []
     },
     "community_manager": {
-      "added_raw": 14,
+      "added_raw": 10,
       "errors": []
     },
     "instagram_creator": {
-      "added_raw": 4,
+      "added_raw": 5,
       "errors": []
     },
     "parenting_site": {
-      "added_raw": 8,
+      "added_raw": 4,
       "errors": []
     },
     "pregnancy_podcast": {
-      "added_raw": 2,
+      "added_raw": 3,
       "errors": []
     },
     "doula_school": {
-      "added_raw": 4,
+      "added_raw": 3,
       "errors": []
     },
     "childbirth_school": {
@@ -135,7 +135,7 @@
       "errors": []
     },
     "women_health_creator": {
-      "added_raw": 11,
+      "added_raw": 3,
       "errors": []
     }
   }
