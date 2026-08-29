@@ -1,14 +1,14 @@
 {
-  "total": 1461,
-  "previous": 1454,
+  "total": 1463,
+  "previous": 1461,
   "moh_gynecology": 0,
   "ima_gynecology": 363,
   "categories": {
     "lactation": 456,
     "gynecologist": 363,
     "birth_center": 45,
+    "doula": 41,
     "facebook_group_admin": 41,
-    "doula": 39,
     "midwife": 38,
     "community_manager": 35,
     "pelvic_floor": 35,
@@ -35,23 +35,23 @@
   },
   "discovery": {
     "doula": {
-      "added_raw": 28,
+      "added_raw": 29,
       "errors": []
     },
     "midwife": {
-      "added_raw": 18,
-      "errors": []
-    },
-    "childbirth_educator": {
-      "added_raw": 23,
-      "errors": []
-    },
-    "birth_center": {
       "added_raw": 12,
       "errors": []
     },
-    "fertility_doctor": {
+    "childbirth_educator": {
       "added_raw": 10,
+      "errors": []
+    },
+    "birth_center": {
+      "added_raw": 4,
+      "errors": []
+    },
+    "fertility_doctor": {
+      "added_raw": 9,
       "errors": []
     },
     "ivf_unit": {
@@ -67,7 +67,7 @@
       "errors": []
     },
     "fertility_nurse": {
-      "added_raw": 4,
+      "added_raw": 3,
       "errors": []
     },
     "fertility_consultant": {
@@ -79,7 +79,7 @@
       "errors": []
     },
     "fertility_preservation": {
-      "added_raw": 7,
+      "added_raw": 6,
       "errors": []
     },
     "fertility_association": {
@@ -91,11 +91,11 @@
       "errors": []
     },
     "sleep_consultant": {
-      "added_raw": 9,
+      "added_raw": 10,
       "errors": []
     },
     "pregnancy_dietitian": {
-      "added_raw": 9,
+      "added_raw": 8,
       "errors": []
     },
     "parenting_center": {
@@ -107,27 +107,27 @@
       "errors": []
     },
     "facebook_group_admin": {
-      "added_raw": 13,
+      "added_raw": 12,
       "errors": []
     },
     "community_manager": {
-      "added_raw": 15,
+      "added_raw": 14,
       "errors": []
     },
     "instagram_creator": {
-      "added_raw": 8,
+      "added_raw": 4,
       "errors": []
     },
     "parenting_site": {
-      "added_raw": 7,
+      "added_raw": 8,
       "errors": []
     },
     "pregnancy_podcast": {
-      "added_raw": 3,
+      "added_raw": 2,
       "errors": []
     },
     "doula_school": {
-      "added_raw": 3,
+      "added_raw": 4,
       "errors": []
     },
     "childbirth_school": {
