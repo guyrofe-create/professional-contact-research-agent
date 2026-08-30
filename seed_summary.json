@@ -1,13 +1,13 @@
 {
-  "total": 1501,
-  "previous": 1499,
+  "total": 1504,
+  "previous": 1501,
   "moh_gynecology": 0,
   "ima_gynecology": 363,
   "categories": {
     "lactation": 456,
     "gynecologist": 363,
-    "birth_center": 47,
-    "doula": 45,
+    "birth_center": 48,
+    "doula": 46,
     "facebook_group_admin": 43,
     "midwife": 39,
     "community_manager": 38,
@@ -20,7 +20,7 @@
     "pregnancy_dietitian": 25,
     "doula_school": 23,
     "fertility_center": 21,
-    "fertility_consultant": 20,
+    "fertility_consultant": 21,
     "pregnancy_podcast": 20,
     "fertility_association": 19,
     "sperm_bank": 19,
@@ -35,7 +35,7 @@
   },
   "discovery": {
     "doula": {
-      "added_raw": 22,
+      "added_raw": 27,
       "errors": []
     },
     "midwife": {
@@ -47,7 +47,7 @@
       "errors": []
     },
     "birth_center": {
-      "added_raw": 19,
+      "added_raw": 18,
       "errors": []
     },
     "fertility_doctor": {
@@ -69,11 +69,8 @@
       ]
     },
     "embryologist": {
-      "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found.",
-        "DDGSException: No results found."
-      ]
+      "added_raw": 2,
+      "errors": []
     },
     "fertility_nurse": {
       "added_raw": 0,
@@ -82,10 +79,8 @@
       ]
     },
     "fertility_consultant": {
-      "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
+      "added_raw": 4,
+      "errors": []
     },
     "sperm_bank": {
       "added_raw": 0,
@@ -94,66 +89,73 @@
     "fertility_preservation": {
       "added_raw": 0,
       "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+        "DDGSException: No results found."
       ]
     },
     "fertility_association": {
       "added_raw": 0,
       "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+        "DDGSException: No results found."
       ]
     },
     "pelvic_floor": {
       "added_raw": 0,
       "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+        "DDGSException: No results found."
       ]
     },
     "sleep_consultant": {
-      "added_raw": 0,
-      "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
-      ]
-    },
-    "pregnancy_dietitian": {
-      "added_raw": 0,
-      "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
-      ]
-    },
-    "parenting_center": {
-      "added_raw": 0,
-      "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
-      ]
-    },
-    "perinatal_mental_health": {
-      "added_raw": 4,
-      "errors": []
-    },
-    "facebook_group_admin": {
-      "added_raw": 7,
-      "errors": []
-    },
-    "community_manager": {
-      "added_raw": 7,
-      "errors": []
-    },
-    "instagram_creator": {
-      "added_raw": 2,
-      "errors": []
-    },
-    "parenting_site": {
       "added_raw": 6,
       "errors": []
     },
-    "pregnancy_podcast": {
+    "pregnancy_dietitian": {
+      "added_raw": 3,
+      "errors": []
+    },
+    "parenting_center": {
+      "added_raw": 3,
+      "errors": []
+    },
+    "perinatal_mental_health": {
       "added_raw": 5,
       "errors": []
     },
+    "facebook_group_admin": {
+      "added_raw": 2,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
+    "community_manager": {
+      "added_raw": 5,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
+    "instagram_creator": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found.",
+        "DDGSException: No results found."
+      ]
+    },
+    "parenting_site": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
+    "pregnancy_podcast": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
     "doula_school": {
       "added_raw": 0,
-      "errors": []
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "childbirth_school": {
       "added_raw": 0,
@@ -162,8 +164,10 @@
       ]
     },
     "women_health_creator": {
-      "added_raw": 7,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     }
   }
 }
