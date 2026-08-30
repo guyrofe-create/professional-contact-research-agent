@@ -1,6 +1,6 @@
 {
-  "total": 1499,
-  "previous": 1495,
+  "total": 1501,
+  "previous": 1499,
   "moh_gynecology": 0,
   "ima_gynecology": 363,
   "categories": {
@@ -8,7 +8,7 @@
     "gynecologist": 363,
     "birth_center": 47,
     "doula": 45,
-    "facebook_group_admin": 41,
+    "facebook_group_admin": 43,
     "midwife": 39,
     "community_manager": 38,
     "instagram_creator": 35,
@@ -35,87 +35,112 @@
   },
   "discovery": {
     "doula": {
-      "added_raw": 29,
+      "added_raw": 22,
       "errors": []
     },
     "midwife": {
-      "added_raw": 16,
+      "added_raw": 15,
       "errors": []
     },
     "childbirth_educator": {
-      "added_raw": 19,
+      "added_raw": 14,
       "errors": []
     },
     "birth_center": {
-      "added_raw": 23,
+      "added_raw": 19,
       "errors": []
     },
     "fertility_doctor": {
-      "added_raw": 12,
-      "errors": []
+      "added_raw": 8,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "ivf_unit": {
-      "added_raw": 2,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "fertility_center": {
-      "added_raw": 7,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "embryologist": {
-      "added_raw": 5,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found.",
+        "DDGSException: No results found."
+      ]
     },
     "fertility_nurse": {
-      "added_raw": 5,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "fertility_consultant": {
-      "added_raw": 4,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "sperm_bank": {
       "added_raw": 0,
       "errors": []
     },
     "fertility_preservation": {
-      "added_raw": 7,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "fertility_association": {
-      "added_raw": 5,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "pelvic_floor": {
-      "added_raw": 5,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "sleep_consultant": {
-      "added_raw": 5,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "pregnancy_dietitian": {
-      "added_raw": 4,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "parenting_center": {
-      "added_raw": 3,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "perinatal_mental_health": {
       "added_raw": 4,
       "errors": []
     },
     "facebook_group_admin": {
-      "added_raw": 9,
+      "added_raw": 7,
       "errors": []
     },
     "community_manager": {
-      "added_raw": 8,
+      "added_raw": 7,
       "errors": []
     },
     "instagram_creator": {
-      "added_raw": 3,
+      "added_raw": 2,
       "errors": []
     },
     "parenting_site": {
@@ -131,8 +156,10 @@
       "errors": []
     },
     "childbirth_school": {
-      "added_raw": 7,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
     },
     "women_health_creator": {
       "added_raw": 7,
