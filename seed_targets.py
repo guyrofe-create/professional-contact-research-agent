@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import json
 import re
 import time
@@ -12,11 +11,17 @@ import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 
-UA = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/4.0)"}
+UA = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/5.0)"}
 MOH = "https://data.gov.il/he/datasets/ministry-health/database-of-doctors-licenses-moh"
+MOH_RESOURCE = "9c64c522-bbc2-48fe-96fb-3b2a8626f59e"
+MOH_DATASTORE = "https://data.gov.il/api/3/action/datastore_search"
 IALP = "https://ialp.org.il/counselors/"
 IMA = "https://www.ima.org.il/doctorsindex/results.aspx?spid=20&page={page}"
 DISCOVERY = {
+    "family_doctor": ["רופא משפחה ישראל", "רופאת משפחה ישראל", "מומחה רפואת משפחה ישראל"],
+    "clinic_manager": ["מנהל מרפאה קופת חולים", "מנהלת מרפאה קופת חולים", "מנהל רפואי מרפאה"],
+    "womens_health_center": ["מרכז בריאות האישה", "מרפאת נשים קופת חולים", "מרכז בריאות האישה קופת חולים"],
+    "community_clinic": ["מרפאת משפחה קופת חולים", "מרפאה קהילתית", "מרכז רפואי קהילתי"],
     "doula": ["דולה ישראל", "אינדקס דולות ישראל"],
     "midwife": ["מיילדת עצמאית ישראל", "מיילדת פרטית ישראל"],
     "childbirth_educator": ["מדריכת הכנה ללידה ישראל"],
@@ -44,6 +49,9 @@ DISCOVERY = {
     "childbirth_school": ["קורס מדריכות הכנה ללידה ישראל"],
     "women_health_creator": ["בלוג בריאות האישה הריון לידה ישראל"],
 }
+REGIONS = ("תל אביב", "ירושלים", "חיפה", "באר שבע", "אשדוד", "ראשון לציון", "פתח תקווה", "נתניה", "השרון", "הצפון", "הדרום", "השפלה")
+PRIORITY_A = {"gynecologist", "fertility_doctor", "ivf_unit", "fertility_center", "embryologist", "fertility_nurse", "fertility_consultant", "sperm_bank", "fertility_preservation", "fertility_association", "doula", "midwife", "childbirth_educator", "birth_center", "womens_health_center"}
+PRIORITY_C = {"facebook_group_admin", "community_manager", "instagram_creator", "parenting_site", "pregnancy_podcast", "doula_school", "childbirth_school", "women_health_creator"}
 KNOWN = {
     "ivf_unit": ["יחידת IVF שיבא", "יחידת IVF איכילוב", "יחידת IVF הדסה", "יחידת IVF רמבם", "יחידת IVF סורוקה"],
     "sperm_bank": ["בנק הזרע שיבא", "בנק הזרע איכילוב", "בנק הזרע הדסה", "בנק הזרע רמבם"],
@@ -93,34 +101,34 @@ def seed_previous(rows):
 
 def seed_moh(rows):
     count = 0
-    try:
-        soup = BeautifulSoup(requests.get(MOH, headers=UA, timeout=30).text, "html.parser")
-        links = [urljoin(MOH, a["href"]) for a in soup.find_all("a", href=True) if ".csv" in a["href"].lower() or "download" in a["href"].lower()]
-        for url in dict.fromkeys(links):
-            response = requests.get(url, headers=UA, timeout=60)
-            if response.status_code != 200:
-                continue
-            frame = None
-            for encoding in ("utf-8-sig", "utf-8", "cp1255"):
-                try:
-                    frame = pd.read_csv(io.BytesIO(response.content), encoding=encoding)
-                    break
-                except Exception:
-                    pass
-            if frame is None or frame.empty:
-                continue
-            speciality = next((c for c in frame.columns if "התמחות" in str(c) or "special" in str(c).lower()), None)
-            first = next((c for c in frame.columns if "פרטי" in str(c) or "first" in str(c).lower()), None)
-            last = next((c for c in frame.columns if "משפחה" in str(c) or "last" in str(c).lower()), None)
-            full = next((c for c in frame.columns if "שם" in str(c) and ("מלא" in str(c) or "full" in str(c).lower())), None)
-            if speciality:
-                selected = frame[frame[speciality].astype(str).str.contains("יילוד|גינקולוג|obstet|gynec", case=False, na=False)]
-                for _, item in selected.iterrows():
-                    name = str(item[full]) if full else f"{item[first]} {item[last]}" if first and last else ""
-                    add(rows, name, "gynecologist", url, "moh")
-                count += len(selected)
-    except Exception:
-        pass
+    specialties = {
+        "gynecologist": "יילוד וגינקולוגיה",
+        "family_doctor": "רפואת המשפחה",
+    }
+    for category, query in specialties.items():
+        offset = 0
+        while True:
+            try:
+                response = requests.get(
+                    MOH_DATASTORE,
+                    params={"resource_id": MOH_RESOURCE, "q": query, "limit": 1000, "offset": offset},
+                    headers=UA,
+                    timeout=60,
+                )
+                response.raise_for_status()
+                result = response.json().get("result", {})
+                records = result.get("records", [])
+            except (requests.RequestException, ValueError):
+                break
+            for item in records:
+                if clean_name(item.get("שם התמחות")) != query:
+                    continue
+                name = clean_name(f'{item.get("שם פרטי", "")} {item.get("שם משפחה", "")}')
+                add(rows, name, category, f"{MOH}/{MOH_RESOURCE}", "moh")
+                count += 1
+            offset += len(records)
+            if not records or offset >= int(result.get("total", 0)):
+                break
     return count
 
 
@@ -160,7 +168,10 @@ def web_discovery(rows):
     stats, engine = {}, DDGS()
     for category, queries in DISCOVERY.items():
         before, errors = len(rows), []
-        for query in queries:
+        expanded_queries=list(queries)
+        if category in {"family_doctor","clinic_manager","womens_health_center","community_clinic","doula","midwife","lactation","pelvic_floor"}:
+            expanded_queries += [f"{query} {region}" for query in queries for region in REGIONS]
+        for query in expanded_queries:
             try:
                 for result in engine.text(query, region="il-he", safesearch="moderate", max_results=30) or []:
                     source = result.get("href") or result.get("url") or ""
@@ -190,7 +201,8 @@ def main():
     if frame.empty:
         raise SystemExit("No targets discovered")
     frame["source_rank"] = frame.seed_type.map({"moh": 0, "ima": 0, "ialp": 0, "curated": 1, "previous": 2, "web": 3}).fillna(4)
-    frame = frame.sort_values(["source_rank", "category", "name"]).drop_duplicates(subset=["name", "category"], keep="first").drop(columns=["source_rank"])
+    frame["priority_rank"] = frame.category.map(lambda category: 0 if category in PRIORITY_A else 2 if category in PRIORITY_C else 1)
+    frame = frame.sort_values(["priority_rank", "source_rank", "category", "name"]).drop_duplicates(subset=["name", "category"], keep="first").drop(columns=["source_rank", "priority_rank"])
     if len(frame) < previous:
         raise SystemExit(f"Safety stop: target universe shrank from {previous} to {len(frame)}")
     frame.to_csv("targets.csv", index=False, encoding="utf-8-sig")

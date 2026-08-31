@@ -7,8 +7,9 @@ from pathlib import Path
 
 import pandas as pd
 from openpyxl import load_workbook
+import agent
 
-ALGO_VERSION = 4
+ALGO_VERSION = agent.ALGO_VERSION
 OUT = Path('output')
 FINAL = Path('final')
 
@@ -47,7 +48,7 @@ def read_checkpoint() -> pd.DataFrame:
         if row.get('algo_version') == ALGO_VERSION:
             done[(row.get('name', ''), row.get('category', ''))] = row
     if not done:
-        raise SystemExit('No version-4 checkpoint rows found')
+        raise SystemExit(f'No version-{ALGO_VERSION} checkpoint rows found')
     return pd.DataFrame(list(done.values()))
 
 
@@ -71,8 +72,11 @@ def main():
     frame = frame.sort_values(['priority', 'status', 'confidence'], ascending=[True, True, False])
     frame = frame.drop_duplicates(subset=['name', 'category'], keep='first')
 
-    person = frame[frame.target_kind == 'person']
-    repeated = {email for email, count in Counter(person[person.email != ''].email).items() if count > 2}
+    expanded = agent.expand_verified_contacts(frame)
+    repeated = set()
+    if not expanded.empty:
+        person = expanded[expanded.target_kind == 'person']
+        repeated = {email for email, count in Counter(person.email).items() if count > 2}
     if repeated:
         mask = (frame.target_kind == 'person') & frame.email.isin(repeated)
         frame.loc[mask, 'status'] = 'REVIEW_SHARED_EMAIL'
@@ -82,7 +86,7 @@ def main():
     safe_frame.to_csv(OUT / 'audit.csv', index=False, encoding='utf-8-sig')
     safe_frame.to_excel(OUT / 'audit.xlsx', index=False)
 
-    found = frame[frame.status == 'VERIFIED'].copy()
+    found = expanded[~expanded.email.isin(repeated)].copy() if not expanded.empty else pd.DataFrame(columns=list(frame.columns) + ['candidate_rank'])
     found = found.sort_values(['priority', 'confidence'], ascending=[True, False]).drop_duplicates(subset=['email'], keep='first')
     safe_found = sanitize_frame(found)
     safe_found.to_csv(OUT / 'contacts.csv', index=False, encoding='utf-8-sig')

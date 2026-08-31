@@ -11,7 +11,7 @@ from pathlib import Path
 
 import requests
 
-ALGO_VERSION = 4
+ALGO_VERSION = 5
 INTERVAL_SECONDS = 300
 
 

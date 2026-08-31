@@ -43,13 +43,15 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=4
+          VERSION=5
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
           if progress.exists():
-              m=re.search(r'^completed=(\d+)$', progress.read_text(encoding='utf-8', errors='ignore'), re.M)
-              if m: expected=int(m.group(1))
+              text=progress.read_text(encoding='utf-8', errors='ignore')
+              m=re.search(r'^completed=(\d+)$', text, re.M)
+              v=re.search(r'^algo_version=(\d+)$', text, re.M)
+              if m and v and int(v.group(1))==VERSION: expected=int(m.group(1))
           keys=set()
           if cp.exists():
               for line in cp.read_text(encoding='utf-8', errors='ignore').splitlines():
@@ -68,18 +70,18 @@ jobs:
         run: python -m unittest -v test_agent.py
       - name: Discover and retain target universe
         run: python seed_targets.py
-      - name: Recheck unresolved clinicians on official hospital sites
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p output
-          timeout 45m python hospital_pass.py || test $? -eq 124
       - name: Run resumable verified research shift
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           mkdir -p output
-          timeout 250m python agent.py targets.csv --out output --resume || test $? -eq 124
+          timeout 220m python agent.py targets.csv --out output --resume || test $? -eq 124
+      - name: Recheck unresolved clinicians on official provider sites
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          timeout 45m python hospital_pass.py || test $? -eq 124
+          python agent.py targets.csv --out output --resume --export-only
       - name: Write completion state
         if: always()
         run: |
@@ -88,7 +90,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import csv,json
-          VERSION=4
+          VERSION=5
           with open('targets.csv',encoding='utf-8-sig') as f:
               targets=sum(1 for _ in csv.DictReader(f))
           keys=set(); cp=Path('output/checkpoint.jsonl')
@@ -107,7 +109,7 @@ jobs:
         if: always()
         run: |
           mkdir -p final
-          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=4$' output/COMPLETE.txt 2>/dev/null; then
+          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=5$' output/COMPLETE.txt 2>/dev/null; then
             cp output/contacts.xlsx final/contacts_FINAL.xlsx
             cp output/audit.xlsx final/audit_FINAL.xlsx
             cp output/review.xlsx final/review_FINAL.xlsx
@@ -115,7 +117,7 @@ jobs:
             cp output/COMPLETE.txt final/COMPLETE.txt
             cp seed_summary.json final/seed_summary_FINAL.json
           else
-            rm -f final/*_FINAL.*
+            echo 'Version 5 research is still in progress; preserving the last completed FINAL files.'
           fi
       - name: Commit checkpoint and QA outputs safely
         if: always()

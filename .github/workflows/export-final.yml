@@ -1,11 +1,6 @@
 name: Build Final Contact Files
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'export_outputs.py'
-      - '.github/workflows/export-final.yml'
   workflow_dispatch:
 
 permissions:
