@@ -1,85 +1,116 @@
 {
-  "total": 1509,
-  "previous": 1507,
-  "moh_gynecology": 0,
+  "total": 7243,
+  "previous": 1509,
+  "moh_gynecology": 5612,
   "ima_gynecology": 363,
   "categories": {
+    "family_doctor": 3461,
+    "gynecologist": 2629,
     "lactation": 456,
-    "gynecologist": 363,
     "birth_center": 48,
     "doula": 47,
-    "facebook_group_admin": 43,
-    "community_manager": 39,
+    "facebook_group_admin": 44,
     "midwife": 39,
-    "instagram_creator": 35,
+    "community_manager": 39,
     "pelvic_floor": 35,
+    "instagram_creator": 35,
     "fertility_doctor": 32,
     "embryologist": 30,
     "women_health_creator": 30,
     "childbirth_educator": 29,
     "pregnancy_dietitian": 25,
+    "perinatal_mental_health": 23,
     "doula_school": 23,
     "fertility_center": 21,
     "fertility_consultant": 21,
-    "perinatal_mental_health": 21,
     "pregnancy_podcast": 20,
     "fertility_association": 19,
     "sperm_bank": 19,
     "parenting_center": 19,
-    "parenting_site": 18,
+    "parenting_site": 19,
     "sleep_consultant": 18,
     "ivf_unit": 17,
     "fertility_nurse": 17,
     "childbirth_school": 13,
-    "fertility_preservation": 12
+    "fertility_preservation": 12,
+    "clinic_manager": 3
   },
   "discovery": {
+    "family_doctor": {
+      "added_raw": 258,
+      "errors": [
+        "DDGSException: No results found.",
+        "DDGSException: No results found."
+      ]
+    },
+    "clinic_manager": {
+      "added_raw": 3,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
+    "womens_health_center": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: No results found."
+      ]
+    },
+    "community_clinic": {
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
+    },
     "doula": {
-      "added_raw": 28,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "midwife": {
-      "added_raw": 16,
-      "errors": []
+      "added_raw": 2,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     },
     "childbirth_educator": {
-      "added_raw": 19,
+      "added_raw": 7,
       "errors": []
     },
     "birth_center": {
-      "added_raw": 18,
+      "added_raw": 0,
       "errors": []
     },
     "fertility_doctor": {
-      "added_raw": 8,
+      "added_raw": 0,
       "errors": [
-        "DDGSException: No results found."
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
       ]
     },
     "ivf_unit": {
       "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
+      "errors": []
     },
     "fertility_center": {
       "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
+      "errors": []
     },
     "embryologist": {
-      "added_raw": 2,
+      "added_raw": 0,
       "errors": []
     },
     "fertility_nurse": {
       "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
+      "errors": []
     },
     "fertility_consultant": {
-      "added_raw": 3,
+      "added_raw": 0,
       "errors": []
     },
     "sperm_bank": {
@@ -88,28 +119,24 @@
     },
     "fertility_preservation": {
       "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
+      "errors": []
     },
     "fertility_association": {
       "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
+      "errors": []
     },
     "pelvic_floor": {
       "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
-    },
-    "sleep_consultant": {
-      "added_raw": 6,
       "errors": []
     },
+    "sleep_consultant": {
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
+    },
     "pregnancy_dietitian": {
-      "added_raw": 5,
+      "added_raw": 0,
       "errors": []
     },
     "parenting_center": {
@@ -117,48 +144,44 @@
       "errors": []
     },
     "perinatal_mental_health": {
-      "added_raw": 5,
-      "errors": []
-    },
-    "facebook_group_admin": {
-      "added_raw": 2,
-      "errors": [
-        "DDGSException: No results found."
-      ]
-    },
-    "community_manager": {
-      "added_raw": 10,
-      "errors": []
-    },
-    "instagram_creator": {
-      "added_raw": 2,
-      "errors": [
-        "DDGSException: No results found."
-      ]
-    },
-    "parenting_site": {
-      "added_raw": 4,
-      "errors": []
-    },
-    "pregnancy_podcast": {
       "added_raw": 6,
       "errors": []
     },
-    "doula_school": {
-      "added_raw": 0,
+    "facebook_group_admin": {
+      "added_raw": 8,
       "errors": [
-        "DDGSException: No results found."
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
       ]
+    },
+    "community_manager": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "instagram_creator": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "parenting_site": {
+      "added_raw": 5,
+      "errors": []
+    },
+    "pregnancy_podcast": {
+      "added_raw": 5,
+      "errors": []
+    },
+    "doula_school": {
+      "added_raw": 5,
+      "errors": []
     },
     "childbirth_school": {
       "added_raw": 0,
-      "errors": [
-        "DDGSException: No results found."
-      ]
+      "errors": []
     },
     "women_health_creator": {
-      "added_raw": 7,
-      "errors": []
+      "added_raw": 0,
+      "errors": [
+        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
+      ]
     }
   }
 }
