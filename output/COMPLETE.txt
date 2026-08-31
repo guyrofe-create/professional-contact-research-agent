@@ -1,4 +1,4 @@
-COMPLETE
-completed=1509
+IN_PROGRESS
+completed=0
 targets=1509
-algo_version=4
+algo_version=5
