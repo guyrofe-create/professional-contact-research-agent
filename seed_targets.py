@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 
 UA = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/5.0)"}
+DISCOVERY_VERSION = 5
 MOH = "https://data.gov.il/he/datasets/ministry-health/database-of-doctors-licenses-moh"
 MOH_RESOURCE = "9c64c522-bbc2-48fe-96fb-3b2a8626f59e"
 MOH_DATASTORE = "https://data.gov.il/api/3/action/datastore_search"
@@ -97,6 +98,24 @@ def seed_previous(rows):
     for record in frame.to_dict("records"):
         add(rows, record.get("name"), record.get("category"), record.get("seed_source", ""), record.get("seed_type", "previous"))
     return len(frame)
+
+
+def previous_seed_counts():
+    path = Path("targets.csv")
+    if not path.exists():
+        return {}
+    frame = pd.read_csv(path).fillna("")
+    return frame.seed_type.value_counts().to_dict() if "seed_type" in frame else {}
+
+
+def discovery_is_current():
+    path = Path("seed_summary.json")
+    if not path.exists():
+        return False
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("discovery_version") == DISCOVERY_VERSION
+    except (OSError, ValueError):
+        return False
 
 
 def seed_moh(rows):
@@ -190,13 +209,15 @@ def web_discovery(rows):
 def main():
     rows = []
     previous = seed_previous(rows)
+    prior_seed_counts = previous_seed_counts()
     for category, names in KNOWN.items():
         for name in names:
             add(rows, name, category, "curated_seed", "curated")
     moh = seed_moh(rows)
-    ima = seed_ima(rows)
-    seed_ialp(rows)
-    discovery = web_discovery(rows)
+    ima = 0 if prior_seed_counts.get("ima", 0) >= 300 else seed_ima(rows)
+    if prior_seed_counts.get("ialp", 0) < 300:
+        seed_ialp(rows)
+    discovery = {"skipped": "version-5 discovery already persisted"} if discovery_is_current() else web_discovery(rows)
     frame = pd.DataFrame(rows)
     if frame.empty:
         raise SystemExit("No targets discovered")
@@ -207,7 +228,7 @@ def main():
         raise SystemExit(f"Safety stop: target universe shrank from {previous} to {len(frame)}")
     frame.to_csv("targets.csv", index=False, encoding="utf-8-sig")
     counts = frame.category.value_counts().to_dict()
-    summary = {"total": len(frame), "previous": previous, "moh_gynecology": moh, "ima_gynecology": ima, "categories": counts, "discovery": discovery}
+    summary = {"discovery_version": DISCOVERY_VERSION, "total": len(frame), "previous": previous, "moh_official_records": moh, "ima_gynecology": ima, "categories": counts, "discovery": discovery}
     Path("seed_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False))
     if counts.get("gynecologist", 0) < 300:
