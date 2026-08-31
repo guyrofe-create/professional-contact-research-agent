@@ -240,7 +240,7 @@ def load_input(path):
 def excel_safe_frame(frame):
     safe=frame.copy()
     for col in safe.columns:
-        if safe[col].dtype==object: safe[col]=safe[col].map(lambda v: ILLEGAL_CHARACTERS_RE.sub("",v) if isinstance(v,str) else v)
+        safe[col]=safe[col].map(lambda v: ILLEGAL_CHARACTERS_RE.sub("",v)[:32767] if isinstance(v,str) else v)
     return safe
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument("input"); parser.add_argument("--out",default="output"); parser.add_argument("--resume",action="store_true"); parser.add_argument("--export-only",action="store_true"); args=parser.parse_args(); out=Path(args.out); out.mkdir(parents=True,exist_ok=True); checkpoint=out/"checkpoint.jsonl"; done={}

@@ -157,6 +157,11 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual("VERIFIED", result["status"])
         self.assertEqual({"clinic@clinic.co.il", "manager@clinic.co.il"}, emails)
 
+    def test_excel_sanitization_applies_to_string_dtype_and_control_chars(self):
+        frame = pd.DataFrame({"evidence": pd.Series(["טקסט\x00פגום"], dtype="str")})
+        safe = agent.excel_safe_frame(frame)
+        self.assertEqual("טקסטפגום", safe.loc[0, "evidence"])
+
     def test_family_doctor_and_womens_health_categories_exist(self):
         self.assertIn("family_doctor", agent.CATEGORY_CONFIG)
         self.assertIn("clinic_manager", agent.CATEGORY_CONFIG)
