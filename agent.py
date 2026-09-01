@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 5
+ALGO_VERSION = 6
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -36,7 +36,7 @@ FREE_MAIL = {"gmail.com", "walla.co.il", "yahoo.com", "hotmail.com", "outlook.co
 BLOCKED_DOMAINS = {"google.com", "youtube.com", "wikipedia.org", "wiktionary.org", "linkedin.com", "rocketreach.co", "zoominfo.com", "prospeo.io", "hunter.io", "apollo.io", "stockanalysis.com", "yahoo.com", "investing.com", "pinterest.com", "mako.co.il", "ynet.co.il", "maariv.co.il", "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br", "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com"}
 TRUSTED_REGISTRIES = {"ima.org.il", "practitioners.health.gov.il", "gov.il", "doctors.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "maccabi4u.co.il", "clalit.co.il", "meuhedet.co.il", "leumit.co.il", "sheba.co.il", "tasmc.org.il", "hadassah.org.il", "rambam.org.il", "assuta.co.il", "hospitals.clalit.co.il", "ialp.org.il", "midwives.org.il"}
 GENERAL_CONTENT_PATHS = ("/article", "/articles", "/blog", "/news", "/magazine", "/forum", "/forums", "/podcast", "/כתבות", "/מאמר", "/חדשות", "/פורום")
-DIRECTORY_DOMAINS = ("doctors.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "ima.org.il")
+DIRECTORY_DOMAINS = ("doctors.co.il", "doctorim.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "medico.co.il", "beok.co.il", "medpage.co.il", "ima.org.il")
 CONTACT_WORDS = ("contact", "about", "team", "staff", "doctor", "clinic", "profile", "email", "directory", "צור-קשר", "צור קשר", "אודות", "צוות", "רופאים", "מרפאה", "דוא״ל", "דואר אלקטרוני")
 OFFICIAL_LINK_WORDS = ("website", "official site", "personal site", "clinic site", "אתר", "אתר אישי", "אתר המרפאה")
 LARGE_INSTITUTION_DOMAINS = {
@@ -50,8 +50,8 @@ ORGANIZATION_DOMAIN_GROUPS = (
 )
 INVALID_TARGET_NAMES = {"ראשי", "אודות", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית"}
 CATEGORY_CONFIG = {
-    "gynecologist": {"priority": "A", "terms": ["יילוד", "גינקולוג", "רופא נשים", "מיילדות", "obstetric", "gynecolog"], "kind": "person"},
-    "family_doctor": {"priority": "B", "terms": ["רפואת משפחה", "רופא משפחה", "רופאת משפחה", "family medicine", "family physician"], "kind": "person"},
+    "gynecologist": {"priority": "A", "terms": ["יילוד", "גינקולוג", "גניקולוג", "רופא נשים", "רפואת נשים", "גינקולוגיה", "גניקולוגיה", "מיילדות", "obstetric", "gynecolog", "ob/gyn", "obgyn"], "kind": "person"},
+    "family_doctor": {"priority": "B", "terms": ["רפואת משפחה", "רופא משפחה", "רופאת משפחה", "מומחה ברפואת המשפחה", "רפואה ראשונית", "family medicine", "family physician"], "kind": "person"},
     "clinic_manager": {"priority": "B", "terms": ["מנהל מרפאה", "מנהלת מרפאה", "ניהול מרפאה", "medical director"], "kind": "person"},
     "womens_health_center": {"priority": "A", "terms": ["מרכז בריאות האישה", "מרפאת נשים", "בריאות האישה", "women health"], "kind": "org"},
     "community_clinic": {"priority": "B", "terms": ["מרפאה קהילתית", "מרפאת משפחה", "מרכז רפואי", "רפואה ראשונית"], "kind": "org"},
@@ -75,6 +75,8 @@ def trusted_registry(url):
     domain=host(url); return any(domain==x or domain.endswith("."+x) for x in TRUSTED_REGISTRIES)
 def large_institution(url):
     domain=host(url); return any(domain==x or domain.endswith("."+x) for x in LARGE_INSTITUTION_DOMAINS)
+def directory_site(url):
+    domain=host(url); return any(domain==x or domain.endswith("."+x) for x in DIRECTORY_DOMAINS)
 def name_match(name,text):
     wanted=tokens(name); hay=set(tokens(text)); needed=len(wanted) if len(wanted)<=2 else len(wanted)-1; return bool(wanted) and sum(x in hay for x in wanted)>=needed
 def category_match(category,text): return any(norm(term) in norm(text) for term in CATEGORY_CONFIG.get(category,{}).get("terms",[]) if norm(term))
@@ -96,24 +98,35 @@ def valid_email(email):
 def local_name_match(email,name):
     local=norm(email.split("@",1)[0]).replace(" ",""); latin=[x for x in tokens(name) if re.search("[a-z]",x) and len(x)>=3]; return bool(latin) and any(x in local for x in latin)
 def search_queries(name,category):
-    terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=" ".join(terms[:2]); queries=[f'"{name}" {profession}',f'"{name}" {profession} מייל',f'"{name}" {profession} אימייל',f'"{name}" {profession} דוא״ל',f'"{name}" {profession} צור קשר',f'"{name}" {profession} אתר רשמי',f'"{name}" מרפאה פרטית',f'"{name}" email',f'"{name}" contact']
+    terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=" ".join(terms[:2]); queries=[f'"{name}" {profession}',f'"{name}" מייל email',f'"{name}" צור קשר מרפאה',f'"{name}" בית חולים קופת חולים']
     if category in {"gynecologist","fertility_doctor","family_doctor","clinic_manager"}:
-        queries += [f'"{name}" site:{d}' for d in DIRECTORY_DOMAINS]
-        queries += [f'"{name}" site:{d}' for d in ("clalit.co.il","maccabi4u.co.il","meuhedet.co.il","leumit.co.il")]
-    elif CATEGORY_CONFIG.get(category,{}).get("kind")=="person": queries += [f'"{name}" site:doctorita.co.il',f'"{name}" site:doctors.co.il',f'"{name}" site:infomed.co.il']
+        queries += [f'"{name}" (site:doctorim.co.il OR site:infomed.co.il OR site:medreviews.co.il)',f'"{name}" (site:clalit.co.il OR site:maccabi4u.co.il OR site:meuhedet.co.il OR site:leumit.co.il)']
+    elif CATEGORY_CONFIG.get(category,{}).get("kind")=="person": queries += [f'"{name}" (site:doctorita.co.il OR site:doctors.co.il OR site:infomed.co.il)']
     return list(dict.fromkeys(queries))
-def search_web(name,category,seed_source="",max_results=8):
+def usable_identity_seed(seed_source):
+    if not seed_source.startswith("http") or blocked_url(seed_source):return False
+    path=urlparse(seed_source).path.lower()
+    return not (host(seed_source).endswith("data.gov.il") and ("dataset" in path or "datastore" in path))
+def search_web(name,category,seed_source="",max_results=8,state=None):
+    state=state if state is not None else {}; state.update({"queries":0,"errors":0,"results":0})
     seen=set()
-    if seed_source.startswith("http") and not blocked_url(seed_source): seen.add(seed_source); yield {"url":seed_source,"title":name,"snippet":"","query":"seed_source","seed":True}
-    engine=DDGS()
-    for query in search_queries(name,category):
-        try:
-            for result in engine.text(query,region="il-he",safesearch="moderate",max_results=max_results) or []:
-                url=result.get("href") or result.get("url") or ""; title=result.get("title",""); snippet=result.get("body","")
-                if url in seen or blocked_url(url) or not name_match(name,title+" "+snippet) or not category_match(category,title+" "+snippet): continue
-                seen.add(url); yield {"url":url,"title":title,"snippet":snippet,"query":query,"seed":False}
-        except Exception as exc: print("SEARCH_WARNING",type(exc).__name__,str(exc)[:160],flush=True)
-        time.sleep(.15)
+    if usable_identity_seed(seed_source): seen.add(seed_source); yield {"url":seed_source,"title":name,"snippet":"","query":"seed_source","seed":True}
+    backends=("duckduckgo","brave","mojeek","google"); backend_start=sum(ord(ch) for ch in name)%len(backends)
+    for query_index,query in enumerate(search_queries(name,category)):
+        state["queries"]+=1; results=[]
+        for backend_offset in range(2):
+            backend=backends[(backend_start+query_index+backend_offset)%len(backends)]
+            try:
+                results=DDGS(timeout=12).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend=backend) or []
+                if results:break
+            except Exception as exc:
+                state["errors"]+=1; print("SEARCH_WARNING",backend,type(exc).__name__,str(exc)[:160],flush=True)
+                time.sleep(.35*(backend_offset+1))
+        for result in results:
+            url=result.get("href") or result.get("url") or ""; title=result.get("title",""); snippet=result.get("body","")
+            if url in seen or blocked_url(url) or not name_match(name,title+" "+snippet):continue
+            seen.add(url); state["results"]+=1; yield {"url":url,"title":title,"snippet":snippet,"query":query,"seed":False}
+        time.sleep(.25)
 @lru_cache(maxsize=1024)
 def fetch(url):
     if blocked_url(url): return url,""
@@ -160,7 +173,10 @@ def extract(url,html):
 def candidate_score(email,url,page_text,title,context,name,category,verified_site,identity_text="",identity_url=""):
     if not valid_email(email) or host(url) in THIRD_PARTY_LEAD_DOMAINS:return None
     kind=CATEGORY_CONFIG.get(category,{"kind":"person"}).get("kind","person"); local,email_domain=email.rsplit("@",1); page_identity=name_match(name,title+" "+page_text[:15000]); inherited_identity=name_match(name,identity_text[:15000]); near_identity=name_match(name,context); profession=category_match(category,title+" "+page_text[:20000]) or category_match(category,identity_text[:20000]); same_domain=related_domains(email_domain,host(url)); related_site=bool(identity_url) and related_domains(host(url),host(identity_url)); free_mail=email_domain in FREE_MAIL
+    if any(x in urlparse(url).path.lower() for x in GENERAL_CONTENT_PATHS):return None
     if not (page_identity or (inherited_identity and related_site)) or not profession:return None
+    if directory_site(url) and (local in GENERIC_LOCAL or not near_identity):return None
+    if identity_url and directory_site(identity_url) and related_site and not page_identity:return None
     if large_institution(url) and not (near_identity or local_name_match(email,name) or category_match(category,context)):return None
     if kind=="person":
         if local in GENERIC_LOCAL and not near_identity and not (verified_site and related_site and not large_institution(url)):return None
@@ -203,7 +219,8 @@ def research(row):
     name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; base={"algo_version":ALGO_VERSION,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source}
     if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES}:
         return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]"}
-    for hit in search_web(name,category,seed_source):
+    search_state={}
+    for hit in search_web(name,category,seed_source,state=search_state):
         url,html=fetch(hit["url"]); attempts.append(url)
         if not html:continue
         items,links,page_text,title,official_links=extract(url,html); verified_site=allowed_identity_page(url,title,page_text,name,category)
@@ -234,7 +251,8 @@ def research(row):
     candidates=ranked_candidates(candidates)
     if candidates:
         score,email,source,evidence,query,method=candidates[0]; alternates=[serialized_candidate(x) for x in candidates[1:5]]; return base|{"email":email,"email_type":classify(email,category),"confidence":score,"source_url":source,"status":"VERIFIED","evidence":evidence,"matched_query":query,"extraction_method":method,"alternate_emails":json.dumps(alternates,ensure_ascii=False),"candidate_count":len(candidates),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
-    return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"NO_VERIFIED_PUBLIC_EMAIL","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
+    status="RETRY_SEARCH_UNAVAILABLE" if search_state.get("results",0)==0 and search_state.get("errors",0)>0 else "NO_VERIFIED_PUBLIC_EMAIL"
+    return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":status,"evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
 def load_input(path):
     source=Path(path); frame=pd.read_excel(source) if source.suffix.lower()==".xlsx" else pd.read_csv(source); return frame.fillna("").to_dict("records")
 def excel_safe_frame(frame):
@@ -243,20 +261,26 @@ def excel_safe_frame(frame):
         safe[col]=safe[col].map(lambda v: ILLEGAL_CHARACTERS_RE.sub("",v)[:32767] if isinstance(v,str) else v)
     return safe
 def main():
-    parser=argparse.ArgumentParser(); parser.add_argument("input"); parser.add_argument("--out",default="output"); parser.add_argument("--resume",action="store_true"); parser.add_argument("--export-only",action="store_true"); args=parser.parse_args(); out=Path(args.out); out.mkdir(parents=True,exist_ok=True); checkpoint=out/"checkpoint.jsonl"; done={}
+    parser=argparse.ArgumentParser(); parser.add_argument("input"); parser.add_argument("--out",default="output"); parser.add_argument("--resume",action="store_true"); parser.add_argument("--export-only",action="store_true"); args=parser.parse_args(); out=Path(args.out); out.mkdir(parents=True,exist_ok=True); checkpoint=out/"checkpoint.jsonl"; stored={}
     if args.resume and checkpoint.exists():
         for line in checkpoint.read_text(encoding="utf-8",errors="ignore").splitlines():
             try: result=json.loads(line)
             except Exception: continue
-            if result.get("algo_version")==ALGO_VERSION: done[(result.get("name",""),result.get("category",""))]=result
-    rows=load_input(args.input); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in done.values()),encoding="utf-8")
+            if result.get("algo_version")==ALGO_VERSION: stored[(result.get("name",""),result.get("category",""))]=result
+    rows=load_input(args.input); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in stored.values()),encoding="utf-8")
     if not args.export_only:
         with checkpoint.open("a",encoding="utf-8") as stream:
-            for index,row in enumerate(rows,1):
+            fresh=[]; retry=[]
+            for row in rows:
                 key=(str(row.get("name","")).strip(),str(row.get("category","")).strip())
-                if key in done:continue
-                print(f"[{index}/{len(rows)}] {key[0]} | {key[1]}",flush=True); result=research(row); done[key]=result; stream.write(json.dumps(result,ensure_ascii=False)+"\n"); stream.flush()
-    frame=pd.DataFrame(list(done.values()))
+                previous=stored.get(key)
+                if previous and not str(previous.get("status","")).startswith("RETRY_"):continue
+                (retry if previous else fresh).append(row)
+            queue=fresh+retry
+            for index,row in enumerate(queue,1):
+                key=(str(row.get("name","")).strip(),str(row.get("category","")).strip())
+                print(f"[{index}/{len(queue)}] {key[0]} | {key[1]}",flush=True); result=research(row); stored[key]=result; stream.write(json.dumps(result,ensure_ascii=False)+"\n"); stream.flush()
+    frame=pd.DataFrame(list(stored.values()))
     if frame.empty:return
     frame=frame.sort_values(["priority","status","confidence"],ascending=[True,True,False]).drop_duplicates(subset=["name","category"],keep="first"); expanded=expand_verified_contacts(frame); repeated=set()
     if not expanded.empty:
@@ -265,5 +289,5 @@ def main():
         mask=(frame.target_kind=="person")&frame.email.isin(repeated); frame.loc[mask,"status"]="REVIEW_SHARED_EMAIL"; frame.loc[mask,"confidence"]=0
     frame.to_csv(out/"audit.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(frame).to_excel(out/"audit.xlsx",index=False)
     found=expanded[~expanded.email.isin(repeated)].copy().sort_values(["priority","confidence"],ascending=[True,False]).drop_duplicates(subset=["email"],keep="first") if not expanded.empty else pd.DataFrame(columns=list(frame.columns)+["candidate_rank"]); found.to_csv(out/"contacts.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(found).to_excel(out/"contacts.xlsx",index=False); excel_safe_frame(frame[frame.status.str.startswith("REVIEW")]).to_excel(out/"review.xlsx",index=False)
-    summary={"algo_version":ALGO_VERSION,"total_targets":len(frame),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
+    summary={"algo_version":ALGO_VERSION,"total_targets":len(frame),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"retry":int(frame.status.str.startswith("RETRY").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
 if __name__=="__main__": main()

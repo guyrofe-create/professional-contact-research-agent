@@ -43,7 +43,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=5
+          VERSION=6
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
@@ -57,7 +57,7 @@ jobs:
               for line in cp.read_text(encoding='utf-8', errors='ignore').splitlines():
                   try:
                       row=json.loads(line)
-                      if row.get('algo_version')==VERSION:
+                      if row.get('algo_version')==VERSION and not str(row.get('status','')).startswith('RETRY_'):
                           keys.add((row.get('name',''), row.get('category','')))
                   except Exception:
                       pass
@@ -90,7 +90,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import csv,json
-          VERSION=5
+          VERSION=6
           with open('targets.csv',encoding='utf-8-sig') as f:
               targets=sum(1 for _ in csv.DictReader(f))
           keys=set(); cp=Path('output/checkpoint.jsonl')
@@ -98,7 +98,7 @@ jobs:
               for line in cp.read_text(encoding='utf-8',errors='ignore').splitlines():
                   try:
                       row=json.loads(line)
-                      if row.get('algo_version')==VERSION: keys.add((row.get('name',''),row.get('category','')))
+                      if row.get('algo_version')==VERSION and not str(row.get('status','')).startswith('RETRY_'): keys.add((row.get('name',''),row.get('category','')))
                   except Exception: pass
           done=len(keys); complete=targets>0 and done>=targets
           Path('output/progress.txt').write_text(f'completed={done}\ntargets={targets}\nalgo_version={VERSION}\n',encoding='utf-8')
@@ -109,7 +109,7 @@ jobs:
         if: always()
         run: |
           mkdir -p final
-          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=5$' output/COMPLETE.txt 2>/dev/null; then
+          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=6$' output/COMPLETE.txt 2>/dev/null; then
             cp output/contacts.xlsx final/contacts_FINAL.xlsx
             cp output/audit.xlsx final/audit_FINAL.xlsx
             cp output/review.xlsx final/review_FINAL.xlsx
@@ -117,7 +117,7 @@ jobs:
             cp output/COMPLETE.txt final/COMPLETE.txt
             cp seed_summary.json final/seed_summary_FINAL.json
           else
-            echo 'Version 5 research is still in progress; preserving the last completed FINAL files.'
+            echo 'Version 6 research is still in progress; preserving the last completed FINAL files.'
           fi
       - name: Commit checkpoint and QA outputs safely
         if: always()

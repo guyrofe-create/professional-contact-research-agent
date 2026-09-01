@@ -1,7 +1,7 @@
 import unittest
 import json
 import pandas as pd
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import agent
 
@@ -85,6 +85,29 @@ class IdentityValidationTests(unittest.TestCase):
             "דוד כהן",
             "gynecologist",
         ))
+
+    def test_directory_support_email_is_not_attributed_to_doctor(self):
+        score = agent.candidate_score(
+            "cs@infomed.co.il", "https://www.infomed.co.il/contact-us/", "שירות לקוחות", "צור קשר",
+            "שירות לקוחות cs@infomed.co.il", "דוד כהן", "gynecologist", True,
+            "דוד כהן מומחה ביילוד וגינקולוגיה", "https://www.infomed.co.il/experts/12345/",
+        )
+        self.assertIsNone(score)
+
+    def test_moh_dataset_is_provenance_not_identity_page(self):
+        self.assertFalse(agent.usable_identity_seed(
+            "https://data.gov.il/he/datasets/ministry-health/database-of-doctors-licenses-moh/123"
+        ))
+
+    def test_search_snippet_does_not_need_to_repeat_specialty(self):
+        hit = {"href": "https://hospital.example/dr-cohen", "title": "דוד כהן", "body": "פרופיל רופא"}
+        state = {}
+        fake_engine = MagicMock()
+        fake_engine.text.return_value = [hit]
+        with patch.object(agent, "DDGS", return_value=fake_engine):
+            results = list(agent.search_web("דוד כהן", "gynecologist", state=state))
+        self.assertTrue(results)
+        self.assertGreater(state["results"], 0)
 
     def test_placeholder_and_non_outreach_emails_are_rejected(self):
         for email in ("dr@example.com", "john.doe@company.com", "mymail@mailservice.com", "rfu-refunds@tlvmc.gov.il", "zimun@tlvmc.gov.il"):

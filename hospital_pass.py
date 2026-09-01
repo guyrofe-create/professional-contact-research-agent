@@ -30,8 +30,6 @@ def queries(name: str, category: str):
     profession = " ".join(terms[:2])
     for domain in HOSPITAL_DOMAINS:
         yield f'"{name}" {profession} site:{domain}'
-        yield f'"{name}" email site:{domain}'
-        yield f'"{name}" מייל site:{domain}'
 
 
 def hospital_research(row: dict):
@@ -44,7 +42,7 @@ def hospital_research(row: dict):
     attempted = []
     for query in queries(name, category):
         try:
-            results = engine.text(query, region="il-he", safesearch="moderate", max_results=5) or []
+            results = engine.text(query, region="il-he", safesearch="moderate", max_results=5, backend="brave,duckduckgo,mojeek") or []
         except Exception as exc:
             print("HOSPITAL_SEARCH_WARNING", type(exc).__name__, str(exc)[:120], flush=True)
             time.sleep(.2)
@@ -110,7 +108,7 @@ def main():
             pass
     changed = 0
     for i, row in enumerate(rows):
-        if row.get("category") not in ELIGIBLE or row.get("status") != "NO_VERIFIED_PUBLIC_EMAIL" or row.get("hospital_pass"):
+        if row.get("category") not in ELIGIBLE or row.get("status") not in {"NO_VERIFIED_PUBLIC_EMAIL", "RETRY_SEARCH_UNAVAILABLE"} or row.get("hospital_pass"):
             continue
         print(f'HOSPITAL_PASS {row.get("name")} | {row.get("category")}', flush=True)
         result = hospital_research(row)
