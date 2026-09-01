@@ -1,8 +1,8 @@
 {
   "discovery_version": 5,
   "total": 7525,
-  "previous": 7538,
-  "moh_records_refreshed": 0,
+  "previous": 7525,
+  "moh_records_refreshed": 5611,
   "moh_targets_retained": 5081,
   "ima_official_profiles": {
     "skipped": "full IMA specialty coverage already persisted"

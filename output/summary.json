@@ -1,16 +1,19 @@
 {
-  "algo_version": 6,
-  "total_targets": 307,
-  "verified": 7,
-  "not_verified": 7,
-  "retry": 293,
+  "algo_version": 7,
+  "total_targets": 7525,
+  "touched_targets": 15,
+  "resolved_targets": 15,
+  "verified": 5,
+  "not_verified": 10,
+  "pending": 0,
   "review": 0,
-  "unique_emails": 19,
+  "unique_emails": 5,
+  "direct_emails": 4,
+  "institutional_emails": 0,
   "by_category": {
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 7,
-      "RETRY_SEARCH_UNAVAILABLE": 293,
-      "VERIFIED": 7
+      "NO_VERIFIED_PUBLIC_EMAIL": 10,
+      "VERIFIED": 5
     }
   }
 }
