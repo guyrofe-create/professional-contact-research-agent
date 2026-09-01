@@ -361,7 +361,7 @@ def excel_safe_frame(frame):
         safe[col]=safe[col].map(lambda v: ILLEGAL_CHARACTERS_RE.sub("",v)[:32767] if isinstance(v,str) else v)
     return safe
 def main():
-    parser=argparse.ArgumentParser(); parser.add_argument("input"); parser.add_argument("--out",default="output"); parser.add_argument("--resume",action="store_true"); parser.add_argument("--export-only",action="store_true"); parser.add_argument("--max-targets",type=int,default=int(os.getenv("MAX_TARGETS_PER_RUN","1500"))); args=parser.parse_args(); out=Path(args.out); out.mkdir(parents=True,exist_ok=True); checkpoint=out/"checkpoint.jsonl"; stored={}
+    parser=argparse.ArgumentParser(); parser.add_argument("input"); parser.add_argument("--out",default="output"); parser.add_argument("--resume",action="store_true"); parser.add_argument("--export-only",action="store_true"); parser.add_argument("--max-targets",type=int,default=int(os.getenv("MAX_TARGETS_PER_RUN","10000"))); args=parser.parse_args(); out=Path(args.out); out.mkdir(parents=True,exist_ok=True); checkpoint=out/"checkpoint.jsonl"; stored={}
     if args.resume and checkpoint.exists():
         for line in checkpoint.read_text(encoding="utf-8",errors="ignore").splitlines():
             try: result=json.loads(line)
