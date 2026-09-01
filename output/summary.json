@@ -1,15 +1,15 @@
 {
   "algo_version": 5,
-  "total_targets": 276,
-  "verified": 10,
-  "not_verified": 232,
-  "review": 34,
-  "unique_emails": 11,
+  "total_targets": 422,
+  "verified": 12,
+  "not_verified": 333,
+  "review": 77,
+  "unique_emails": 17,
   "by_category": {
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 232,
-      "REVIEW_SHARED_EMAIL": 34,
-      "VERIFIED": 10
+      "NO_VERIFIED_PUBLIC_EMAIL": 333,
+      "REVIEW_SHARED_EMAIL": 77,
+      "VERIFIED": 12
     }
   }
 }

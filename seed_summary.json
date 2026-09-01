@@ -1,7 +1,7 @@
 {
   "discovery_version": 5,
   "total": 7766,
-  "previous": 7243,
+  "previous": 7766,
   "moh_official_records": 5612,
   "ima_gynecology": 0,
   "categories": {
@@ -39,137 +39,6 @@
     "fertility_preservation": 12
   },
   "discovery": {
-    "family_doctor": {
-      "added_raw": 436,
-      "errors": []
-    },
-    "clinic_manager": {
-      "added_raw": 127,
-      "errors": []
-    },
-    "womens_health_center": {
-      "added_raw": 209,
-      "errors": []
-    },
-    "community_clinic": {
-      "added_raw": 169,
-      "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
-      ]
-    },
-    "doula": {
-      "added_raw": 75,
-      "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
-      ]
-    },
-    "midwife": {
-      "added_raw": 53,
-      "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out",
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
-      ]
-    },
-    "childbirth_educator": {
-      "added_raw": 4,
-      "errors": []
-    },
-    "birth_center": {
-      "added_raw": 5,
-      "errors": []
-    },
-    "fertility_doctor": {
-      "added_raw": 10,
-      "errors": []
-    },
-    "ivf_unit": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_center": {
-      "added_raw": 2,
-      "errors": []
-    },
-    "embryologist": {
-      "added_raw": 2,
-      "errors": []
-    },
-    "fertility_nurse": {
-      "added_raw": 1,
-      "errors": []
-    },
-    "fertility_consultant": {
-      "added_raw": 6,
-      "errors": []
-    },
-    "sperm_bank": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_preservation": {
-      "added_raw": 6,
-      "errors": []
-    },
-    "fertility_association": {
-      "added_raw": 5,
-      "errors": []
-    },
-    "pelvic_floor": {
-      "added_raw": 66,
-      "errors": []
-    },
-    "sleep_consultant": {
-      "added_raw": 4,
-      "errors": []
-    },
-    "pregnancy_dietitian": {
-      "added_raw": 4,
-      "errors": []
-    },
-    "parenting_center": {
-      "added_raw": 3,
-      "errors": []
-    },
-    "perinatal_mental_health": {
-      "added_raw": 4,
-      "errors": []
-    },
-    "facebook_group_admin": {
-      "added_raw": 12,
-      "errors": []
-    },
-    "community_manager": {
-      "added_raw": 4,
-      "errors": [
-        "TimeoutException: error sending request for url (https://html.duckduckgo.com/html/) > operation timed out"
-      ]
-    },
-    "instagram_creator": {
-      "added_raw": 6,
-      "errors": []
-    },
-    "parenting_site": {
-      "added_raw": 4,
-      "errors": []
-    },
-    "pregnancy_podcast": {
-      "added_raw": 3,
-      "errors": []
-    },
-    "doula_school": {
-      "added_raw": 3,
-      "errors": []
-    },
-    "childbirth_school": {
-      "added_raw": 7,
-      "errors": []
-    },
-    "women_health_creator": {
-      "added_raw": 3,
-      "errors": []
-    }
+    "skipped": "version-5 discovery already persisted"
   }
 }
