@@ -1,19 +1,170 @@
 {
   "algo_version": 7,
   "total_targets": 7525,
-  "touched_targets": 15,
-  "resolved_targets": 15,
-  "verified": 5,
-  "not_verified": 10,
-  "pending": 0,
+  "touched_targets": 7525,
+  "resolved_targets": 742,
+  "verified": 664,
+  "not_verified": 78,
+  "pending": 6783,
   "review": 0,
-  "unique_emails": 5,
-  "direct_emails": 4,
-  "institutional_emails": 0,
+  "unique_emails": 394,
+  "direct_emails": 370,
+  "institutional_emails": 50,
   "by_category": {
-    "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 10,
+    "birth_center": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 39,
+      "VERIFIED": 9
+    },
+    "childbirth_educator": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 21,
+      "VERIFIED": 8
+    },
+    "childbirth_school": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 11,
+      "VERIFIED": 2
+    },
+    "clinic_manager": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 99,
+      "VERIFIED": 0
+    },
+    "community_clinic": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 119,
+      "VERIFIED": 11
+    },
+    "community_manager": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 31,
+      "VERIFIED": 8
+    },
+    "doula": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 65,
+      "VERIFIED": 11
+    },
+    "doula_school": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 18,
+      "VERIFIED": 4
+    },
+    "embryologist": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 19,
+      "VERIFIED": 6
+    },
+    "facebook_group_admin": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 37,
+      "VERIFIED": 8
+    },
+    "family_doctor": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 3633,
+      "VERIFIED": 12
+    },
+    "fertility_association": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 15,
+      "VERIFIED": 4
+    },
+    "fertility_center": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 15,
       "VERIFIED": 5
+    },
+    "fertility_consultant": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 19,
+      "VERIFIED": 3
+    },
+    "fertility_doctor": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 22,
+      "VERIFIED": 11
+    },
+    "fertility_nurse": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 11,
+      "VERIFIED": 5
+    },
+    "fertility_preservation": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 9,
+      "VERIFIED": 3
+    },
+    "gynecologist": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 78,
+      "PENDING_SEARCH_PROVIDER": 2261,
+      "VERIFIED": 19
+    },
+    "ivf_unit": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 15,
+      "VERIFIED": 2
+    },
+    "lactation": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 2,
+      "VERIFIED": 453
+    },
+    "midwife": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 51,
+      "VERIFIED": 16
+    },
+    "parenting_center": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 17,
+      "VERIFIED": 1
+    },
+    "parenting_site": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 15,
+      "VERIFIED": 4
+    },
+    "pelvic_floor": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 44,
+      "VERIFIED": 14
+    },
+    "perinatal_mental_health": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 13,
+      "VERIFIED": 9
+    },
+    "pregnancy_dietitian": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 12,
+      "VERIFIED": 11
+    },
+    "pregnancy_podcast": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 17,
+      "VERIFIED": 3
+    },
+    "sleep_consultant": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 10,
+      "VERIFIED": 8
+    },
+    "sperm_bank": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 14,
+      "VERIFIED": 5
+    },
+    "women_health_creator": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 25,
+      "VERIFIED": 5
+    },
+    "womens_health_center": {
+      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "PENDING_SEARCH_PROVIDER": 104,
+      "VERIFIED": 4
     }
   }
 }
