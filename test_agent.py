@@ -4,6 +4,7 @@ import pandas as pd
 from unittest.mock import MagicMock, patch
 
 import agent
+import seed_targets
 
 
 class IdentityValidationTests(unittest.TestCase):
@@ -94,6 +95,56 @@ class IdentityValidationTests(unittest.TestCase):
         )
         self.assertIsNone(score)
 
+    def test_business_directory_email_is_never_attributed_to_doctor(self):
+        score = agent.candidate_score(
+            "1800@d.co.il", "https://www.d.co.il/80213191/46500/",
+            "ד״ר אביגיל מעיני גינקולוגית", "ד״ר אביגיל מעיני",
+            "שירות לקוחות 1800@d.co.il", "אביגיל מעיני", "gynecologist", True,
+        )
+        self.assertIsNone(score)
+
+    def test_generic_hospital_directory_is_not_identity_page(self):
+        self.assertFalse(agent.allowed_identity_page(
+            "https://www.szmc.org.il/doctors/", "רופאים בשערי צדק",
+            "ד״ר אבי צפריר רופא נשים ד״ר אדם פרקש קרדיולוג",
+            "אבי צפריר", "gynecologist",
+        ))
+
+    def test_generic_hospital_department_is_not_person_identity_page(self):
+        self.assertFalse(agent.allowed_identity_page(
+            "https://www.laniado.org.il/mahlakot/ivf/", "יחידת IVF",
+            "אביטל גלאובך צוות רפואי יחידת פוריות",
+            "אביטל גלאובך", "gynecologist",
+        ))
+
+    def test_exact_profile_link_is_resolved_from_directory(self):
+        html = '''<html><body><ul>
+        <li>ד״ר אבי צפריר <a href="/doctors/tsafrir-avi/">לפרופיל</a></li>
+        <li>ד״ר אדם פרקש <a href="/doctors/farkash-adam/">לפרופיל</a></li>
+        </ul></body></html>'''
+        self.assertEqual(
+            ["https://hospital.org.il/doctors/tsafrir-avi/"],
+            agent.identity_profile_links("https://hospital.org.il/doctors/", html, "אבי צפריר"),
+        )
+
+    def test_unrelated_email_on_hospital_list_is_rejected(self):
+        score = agent.candidate_score(
+            "aflek1@yahoo.com", "https://www.szmc.org.il/doctors/",
+            "אבי צפריר רופא נשים אברהם פלד aflek1@yahoo.com", "רופאים בשערי צדק",
+            "אברהם פלד aflek1@yahoo.com", "אבי צפריר", "gynecologist", False,
+        )
+        self.assertIsNone(score)
+
+    def test_structural_context_does_not_cross_people(self):
+        html = '''<html><head><title>רופאים</title></head><body><ul>
+        <li>ד״ר אבי צפריר, רופא נשים</li>
+        <li>ד״ר אדם פרקש <a href="mailto:adam@examplehospital.org.il">adam@examplehospital.org.il</a></li>
+        </ul></body></html>'''
+        found, _, text, title, _ = agent.extract("https://hospital.org.il/doctors", html)
+        email, context, _ = next(x for x in found if x[0] == "adam@examplehospital.org.il")
+        self.assertNotIn("אבי צפריר", context)
+        self.assertIsNone(agent.candidate_score(email, "https://hospital.org.il/doctors", text, title, context, "אבי צפריר", "gynecologist", False))
+
     def test_moh_dataset_is_provenance_not_identity_page(self):
         self.assertFalse(agent.usable_identity_seed(
             "https://data.gov.il/he/datasets/ministry-health/database-of-doctors-licenses-moh/123"
@@ -108,6 +159,23 @@ class IdentityValidationTests(unittest.TestCase):
             results = list(agent.search_web("דוד כהן", "gynecologist", state=state))
         self.assertTrue(results)
         self.assertGreater(state["results"], 0)
+
+    def test_search_circuit_stops_repeated_provider_failures(self):
+        old = (agent.SEARCH_CALLS, agent.SEARCH_CONSECUTIVE_FAILURES, agent.SEARCH_CIRCUIT_OPEN, agent.SEARCH_CIRCUIT_FAILURES)
+        try:
+            agent.SEARCH_CALLS = 0
+            agent.SEARCH_CONSECUTIVE_FAILURES = 0
+            agent.SEARCH_CIRCUIT_OPEN = False
+            agent.SEARCH_CIRCUIT_FAILURES = 2
+            with patch.object(agent, "_search_once", side_effect=RuntimeError("provider unavailable")) as search:
+                list(agent.search_web("דוד כהן", "gynecologist", state={}))
+                state = {}
+                list(agent.search_web("שרה לוי", "gynecologist", state=state))
+                list(agent.search_web("רחל ישראלי", "gynecologist", state={}))
+            self.assertEqual(2, search.call_count)
+            self.assertTrue(state["circuit_open"])
+        finally:
+            agent.SEARCH_CALLS, agent.SEARCH_CONSECUTIVE_FAILURES, agent.SEARCH_CIRCUIT_OPEN, agent.SEARCH_CIRCUIT_FAILURES = old
 
     def test_placeholder_and_non_outreach_emails_are_rejected(self):
         for email in ("dr@example.com", "john.doe@company.com", "mymail@mailservice.com", "rfu-refunds@tlvmc.gov.il", "zimun@tlvmc.gov.il"):
@@ -159,6 +227,17 @@ class IdentityValidationTests(unittest.TestCase):
         expanded = agent.expand_verified_contacts(pd.DataFrame([row]))
         self.assertEqual({"clinic@health.co.il", "manager@health.co.il"}, set(expanded.email))
 
+    def test_shared_clinic_email_is_retained_and_marked(self):
+        rows = pd.DataFrame([
+            {"name": "דוד כהן", "category": "gynecologist", "status": "VERIFIED", "email": "clinic@health.co.il", "confidence": 90, "alternate_emails": "[]"},
+            {"name": "שרה לוי", "category": "gynecologist", "status": "VERIFIED", "email": "clinic@health.co.il", "confidence": 88, "alternate_emails": "[]"},
+        ])
+        expanded = agent.annotate_shared_contacts(agent.expand_verified_contacts(rows))
+        self.assertEqual(2, len(expanded))
+        self.assertTrue(expanded.shared_contact.all())
+        self.assertEqual({2}, set(expanded.shared_target_count))
+        self.assertEqual(1, len(expanded.drop_duplicates(subset=["email"])))
+
     def test_research_crawls_official_contact_pages_and_keeps_multiple_emails(self):
         pages = {
             "https://clinic.co.il/about": '''<html><head><title>מרכז בריאות האישה אור</title></head><body>
@@ -179,6 +258,7 @@ class IdentityValidationTests(unittest.TestCase):
         emails = {item["email"] for item in agent.row_candidates(result)}
         self.assertEqual("VERIFIED", result["status"])
         self.assertEqual({"clinic@clinic.co.il", "manager@clinic.co.il"}, emails)
+        self.assertEqual("https://clinic.co.il/about", result["identity_url"])
 
     def test_excel_sanitization_applies_to_string_dtype_and_control_chars(self):
         frame = pd.DataFrame({"evidence": pd.Series(["טקסט\x00פגום"], dtype="str")})
@@ -190,6 +270,22 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertIn("clinic_manager", agent.CATEGORY_CONFIG)
         self.assertIn("womens_health_center", agent.CATEGORY_CONFIG)
         self.assertIn("community_clinic", agent.CATEGORY_CONFIG)
+
+    def test_department_role_addresses_are_classified_as_institutional(self):
+        for email in ("ivfrec@hospital.org.il", "og-clinic@hospital.org.il", "nashim@hospital.org.il"):
+            with self.subTest(email=email):
+                self.assertEqual("CLINIC_OR_ORGANIZATION", agent.classify(email, "gynecologist"))
+
+    def test_person_deduplication_ignores_name_order_and_titles(self):
+        first = seed_targets.person_identity_key("ד״ר עדי פוקס", "family_doctor")
+        second = seed_targets.person_identity_key("פוקס עדי", "family_doctor")
+        self.assertEqual(first, second)
+
+    def test_navigation_titles_are_not_added_as_targets(self):
+        rows = []
+        seed_targets.add(rows, "אודות", "lactation", "https://example.org/about")
+        seed_targets.add(rows, "דף הבית", "parenting_center", "https://example.org/")
+        self.assertEqual([], rows)
 
 
 if __name__ == "__main__":

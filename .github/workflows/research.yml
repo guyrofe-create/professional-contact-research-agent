@@ -2,16 +2,6 @@ name: Autonomous Contact Research
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'agent.py'
-      - 'hospital_pass.py'
-      - 'seed_targets.py'
-      - 'sitecustomize.py'
-      - 'test_agent.py'
-      - 'requirements.txt'
-      - '.github/workflows/research.yml'
   schedule:
     - cron: '17 */6 * * *'
       timezone: 'Asia/Jerusalem'
@@ -27,7 +17,7 @@ concurrency:
 jobs:
   research:
     runs-on: ubuntu-latest
-    timeout-minutes: 330
+    timeout-minutes: 210
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,7 +33,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=6
+          VERSION=7
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
@@ -52,15 +42,16 @@ jobs:
               m=re.search(r'^completed=(\d+)$', text, re.M)
               v=re.search(r'^algo_version=(\d+)$', text, re.M)
               if m and v and int(v.group(1))==VERSION: expected=int(m.group(1))
-          keys=set()
+          latest={}
           if cp.exists():
               for line in cp.read_text(encoding='utf-8', errors='ignore').splitlines():
                   try:
                       row=json.loads(line)
-                      if row.get('algo_version')==VERSION and not str(row.get('status','')).startswith('RETRY_'):
-                          keys.add((row.get('name',''), row.get('category','')))
+                      if row.get('algo_version')==VERSION:
+                          latest[(row.get('name',''), row.get('category',''))]=row
                   except Exception:
                       pass
+          keys={key for key,row in latest.items() if not str(row.get('status','')).startswith('PENDING')}
           actual=len(keys)
           print(f'checkpoint version={VERSION} completed={actual} expected_at_least={expected}')
           if expected and actual < expected:
@@ -73,15 +64,13 @@ jobs:
       - name: Run resumable verified research shift
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          SEARCH_CALL_LIMIT: 250
+          SEARCH_CIRCUIT_FAILURES: 4
+          MAX_TARGETS_PER_RUN: 1500
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: |
           mkdir -p output
-          timeout 220m python agent.py targets.csv --out output --resume || test $? -eq 124
-      - name: Recheck unresolved clinicians on official provider sites
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          timeout 45m python hospital_pass.py || test $? -eq 124
-          python agent.py targets.csv --out output --resume --export-only
+          timeout 165m python agent.py targets.csv --out output --resume || test $? -eq 124
       - name: Write completion state
         if: always()
         run: |
@@ -90,35 +79,27 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import csv,json
-          VERSION=6
+          VERSION=7
           with open('targets.csv',encoding='utf-8-sig') as f:
               targets=sum(1 for _ in csv.DictReader(f))
-          keys=set(); cp=Path('output/checkpoint.jsonl')
+          latest={}; cp=Path('output/checkpoint.jsonl')
           if cp.exists():
               for line in cp.read_text(encoding='utf-8',errors='ignore').splitlines():
                   try:
                       row=json.loads(line)
-                      if row.get('algo_version')==VERSION and not str(row.get('status','')).startswith('RETRY_'): keys.add((row.get('name',''),row.get('category','')))
+                      if row.get('algo_version')==VERSION:
+                          latest[(row.get('name',''),row.get('category',''))]=row
                   except Exception: pass
-          done=len(keys); complete=targets>0 and done>=targets
-          Path('output/progress.txt').write_text(f'completed={done}\ntargets={targets}\nalgo_version={VERSION}\n',encoding='utf-8')
-          Path('output/COMPLETE.txt').write_text(('COMPLETE' if complete else 'IN_PROGRESS')+f'\ncompleted={done}\ntargets={targets}\nalgo_version={VERSION}\n',encoding='utf-8')
-          print(f'completed={done} targets={targets} complete={complete}')
+          touched=set(latest); pending={key for key,row in latest.items() if str(row.get('status','')).startswith('PENDING')}
+          keys=touched-pending; done=len(keys); complete=targets>0 and done>=targets
+          state=f'completed={done}\ntouched={len(touched)}\npending={len(pending)}\ntargets={targets}\nalgo_version={VERSION}\n'
+          Path('output/progress.txt').write_text(state,encoding='utf-8')
+          Path('output/COMPLETE.txt').write_text(('COMPLETE' if complete else 'IN_PROGRESS')+'\n'+state,encoding='utf-8')
+          print(f'completed={done} touched={len(touched)} pending={len(pending)} targets={targets} complete={complete}')
           PY
-      - name: Create final copy only after full verified pass
+      - name: Generate and validate checkpoint reports
         if: always()
-        run: |
-          mkdir -p final
-          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null && grep -q '^algo_version=6$' output/COMPLETE.txt 2>/dev/null; then
-            cp output/contacts.xlsx final/contacts_FINAL.xlsx
-            cp output/audit.xlsx final/audit_FINAL.xlsx
-            cp output/review.xlsx final/review_FINAL.xlsx
-            cp output/summary.json final/summary_FINAL.json
-            cp output/COMPLETE.txt final/COMPLETE.txt
-            cp seed_summary.json final/seed_summary_FINAL.json
-          else
-            echo 'Version 6 research is still in progress; preserving the last completed FINAL files.'
-          fi
+        run: python export_outputs.py
       - name: Commit checkpoint and QA outputs safely
         if: always()
         run: |
@@ -152,14 +133,3 @@ jobs:
             targets.csv
           if-no-files-found: warn
           retention-days: 30
-      - name: Start next shift immediately if research is incomplete
-        if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if grep -q '^COMPLETE$' output/COMPLETE.txt 2>/dev/null; then
-            echo 'Research complete; no continuation needed.'
-            exit 0
-          fi
-          echo 'Research incomplete; dispatching the next shift.'
-          gh workflow run research.yml --ref main

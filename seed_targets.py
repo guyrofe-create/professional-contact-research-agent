@@ -17,7 +17,20 @@ MOH = "https://data.gov.il/he/datasets/ministry-health/database-of-doctors-licen
 MOH_RESOURCE = "9c64c522-bbc2-48fe-96fb-3b2a8626f59e"
 MOH_DATASTORE = "https://data.gov.il/api/3/action/datastore_search"
 IALP = "https://ialp.org.il/counselors/"
-IMA = "https://www.ima.org.il/doctorsindex/results.aspx?spid=20&page={page}"
+IMA = "https://www.ima.org.il/doctorsindex/results.aspx?spid={spid}&page={page}"
+IMA_SPECIALTIES = {
+    "gynecologist": 20,
+    "family_doctor": 99,
+}
+EXCLUDED_CATEGORIES = {"instagram_creator"}
+INVALID_ENTITY_NAMES = {
+    "ראשי", "אודות", "אודותינו", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית",
+}
+PERSON_CATEGORIES = {
+    "gynecologist", "family_doctor", "clinic_manager", "fertility_doctor", "embryologist",
+    "fertility_nurse", "fertility_consultant", "doula", "midwife", "childbirth_educator",
+    "lactation", "pelvic_floor", "sleep_consultant", "pregnancy_dietitian", "perinatal_mental_health",
+}
 DISCOVERY = {
     "family_doctor": ["רופא משפחה ישראל", "רופאת משפחה ישראל", "מומחה רפואת משפחה ישראל"],
     "clinic_manager": ["מנהל מרפאה קופת חולים", "מנהלת מרפאה קופת חולים", "מנהל רפואי מרפאה"],
@@ -43,7 +56,6 @@ DISCOVERY = {
     "perinatal_mental_health": ["פסיכולוגית הריון לידה פוריות ישראל"],
     "facebook_group_admin": ["קבוצת פייסבוק הריון לידה ישראל", "קבוצת פייסבוק פוריות ישראל"],
     "community_manager": ["קהילת הריון לידה ישראל", "קהילת פוריות ישראל"],
-    "instagram_creator": ["אינסטגרם הריון לידה ישראל", "אינסטגרם פוריות ישראל"],
     "parenting_site": ["אתר הורות הריון לידה ישראל"],
     "pregnancy_podcast": ["פודקאסט הריון לידה פוריות ישראל"],
     "doula_school": ["בית ספר לדולות ישראל"],
@@ -52,7 +64,7 @@ DISCOVERY = {
 }
 REGIONS = ("תל אביב", "ירושלים", "חיפה", "באר שבע", "אשדוד", "ראשון לציון", "פתח תקווה", "נתניה", "השרון", "הצפון", "הדרום", "השפלה")
 PRIORITY_A = {"gynecologist", "fertility_doctor", "ivf_unit", "fertility_center", "embryologist", "fertility_nurse", "fertility_consultant", "sperm_bank", "fertility_preservation", "fertility_association", "doula", "midwife", "childbirth_educator", "birth_center", "womens_health_center"}
-PRIORITY_C = {"facebook_group_admin", "community_manager", "instagram_creator", "parenting_site", "pregnancy_podcast", "doula_school", "childbirth_school", "women_health_creator"}
+PRIORITY_C = {"facebook_group_admin", "community_manager", "parenting_site", "pregnancy_podcast", "doula_school", "childbirth_school", "women_health_creator"}
 KNOWN = {
     "ivf_unit": ["יחידת IVF שיבא", "יחידת IVF איכילוב", "יחידת IVF הדסה", "יחידת IVF רמבם", "יחידת IVF סורוקה"],
     "sperm_bank": ["בנק הזרע שיבא", "בנק הזרע איכילוב", "בנק הזרע הדסה", "בנק הזרע רמבם"],
@@ -70,10 +82,16 @@ def clean_name(value):
     return re.sub(r"\s+", " ", str(value or "")).strip(" |-–—:")[:160]
 
 
-def add(rows, name, category, source="", source_type="discovery"):
+def person_identity_key(name, category):
+    value = re.sub(r"^(?:ד[\"״']?ר|דוקטור|פרופ[\"׳']?|פרופסור)\s+", "", clean_name(name), flags=re.I)
+    words = [word for word in re.split(r"[^\w\u0590-\u05ff]+", value.lower()) if len(word) >= 2]
+    return " ".join(sorted(words)) if category in PERSON_CATEGORIES else " ".join(words)
+
+
+def add(rows, name, category, source="", source_type="discovery", **metadata):
     name = clean_name(name)
-    if 3 <= len(name) <= 160:
-        rows.append({"name": name, "category": category, "seed_source": source, "seed_type": source_type})
+    if category not in EXCLUDED_CATEGORIES and name not in INVALID_ENTITY_NAMES and 3 <= len(name) <= 160:
+        rows.append({"name": name, "category": category, "seed_source": source, "seed_type": source_type} | metadata)
 
 
 def entity_title(title, query):
@@ -96,7 +114,11 @@ def seed_previous(rows):
         return 0
     frame = pd.read_csv(path).fillna("")
     for record in frame.to_dict("records"):
-        add(rows, record.get("name"), record.get("category"), record.get("seed_source", ""), record.get("seed_type", "previous"))
+        add(
+            rows, record.get("name"), record.get("category"), record.get("seed_source", ""),
+            record.get("seed_type", "previous"), license_number=record.get("license_number", ""),
+            specialty_certificate=record.get("specialty_certificate", ""),
+        )
     return len(frame)
 
 
@@ -143,7 +165,11 @@ def seed_moh(rows):
                 if clean_name(item.get("שם התמחות")) != query:
                     continue
                 name = clean_name(f'{item.get("שם פרטי", "")} {item.get("שם משפחה", "")}')
-                add(rows, name, category, f"{MOH}/{MOH_RESOURCE}", "moh")
+                add(
+                    rows, name, category, f"{MOH}/{MOH_RESOURCE}", "moh",
+                    license_number=item.get("מספר רישיון רופא", ""),
+                    specialty_certificate=item.get("מספר תעודת התמחות", ""),
+                )
                 count += 1
             offset += len(records)
             if not records or offset >= int(result.get("total", 0)):
@@ -151,24 +177,37 @@ def seed_moh(rows):
     return count
 
 
-def seed_ima(rows):
-    seen, empty = set(), 0
-    for page in range(1, 40):
-        url = IMA.format(page=page)
-        try:
-            soup = BeautifulSoup(requests.get(url, headers=UA, timeout=30).text, "html.parser")
-            before = len(seen)
-            for anchor in soup.find_all("a", href=True):
-                href, text = anchor.get("href", ""), clean_name(anchor.get_text(" ", strip=True))
-                if "doctorprofile" in href.lower() and 3 <= len(text) <= 100:
-                    seen.add(text)
-                    add(rows, text, "gynecologist", urljoin(url, href), "ima")
-            empty = empty + 1 if len(seen) == before else 0
-            if empty >= 2 and page > 5:
-                break
-        except Exception:
-            empty += 1
-    return len(seen)
+def seed_ima(rows, categories=None):
+    counts = {}
+    for category, spid in IMA_SPECIALTIES.items():
+        if categories is not None and category not in categories:
+            continue
+        seen, empty = set(), 0
+        for page in range(1, 80):
+            url = IMA.format(spid=spid, page=page)
+            try:
+                response = requests.get(url, headers=UA, timeout=30)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, "html.parser")
+                before = len(seen)
+                for anchor in soup.find_all("a", href=True):
+                    href, text = anchor.get("href", ""), clean_name(anchor.get_text(" ", strip=True))
+                    if "doctorprofile" not in href.lower() or not text or text in {"מידע נוסף"}:
+                        continue
+                    profile = urljoin(url, href)
+                    key = (text, profile)
+                    if key not in seen:
+                        seen.add(key)
+                        add(rows, text, category, profile, "ima")
+                empty = empty + 1 if len(seen) == before else 0
+                if empty >= 2 and page > 5:
+                    break
+            except requests.RequestException:
+                empty += 1
+                if empty >= 3:
+                    break
+        counts[category] = len(seen)
+    return counts
 
 
 def seed_ialp(rows):
@@ -214,21 +253,44 @@ def main():
         for name in names:
             add(rows, name, category, "curated_seed", "curated")
     moh = seed_moh(rows)
-    ima = 0 if prior_seed_counts.get("ima", 0) >= 300 else seed_ima(rows)
+    prior_frame = pd.read_csv("targets.csv").fillna("") if Path("targets.csv").exists() else pd.DataFrame()
+    missing_ima = {
+        category for category in IMA_SPECIALTIES
+        if prior_frame.empty or len(prior_frame[(prior_frame.get("seed_type", "") == "ima") & (prior_frame.get("category", "") == category)]) < 300
+    }
+    ima = seed_ima(rows, missing_ima) if missing_ima else {"skipped": "full IMA specialty coverage already persisted"}
     if prior_seed_counts.get("ialp", 0) < 300:
         seed_ialp(rows)
     discovery = {"skipped": "version-5 discovery already persisted"} if discovery_is_current() else web_discovery(rows)
     frame = pd.DataFrame(rows)
     if frame.empty:
         raise SystemExit("No targets discovered")
-    frame["source_rank"] = frame.seed_type.map({"moh": 0, "ima": 0, "ialp": 0, "curated": 1, "previous": 2, "web": 3}).fillna(4)
+    frame["source_rank"] = frame.seed_type.map({"ima": 0, "ialp": 0, "curated": 1, "moh": 2, "previous": 3, "web": 4}).fillna(5)
     frame["priority_rank"] = frame.category.map(lambda category: 0 if category in PRIORITY_A else 2 if category in PRIORITY_C else 1)
-    frame = frame.sort_values(["priority_rank", "source_rank", "category", "name"]).drop_duplicates(subset=["name", "category"], keep="first").drop(columns=["source_rank", "priority_rank"])
-    if len(frame) < previous:
-        raise SystemExit(f"Safety stop: target universe shrank from {previous} to {len(frame)}")
+    frame["identity_key"] = [person_identity_key(name, category) for name, category in zip(frame.name, frame.category)]
+    frame = frame.sort_values(["priority_rank", "source_rank", "category", "name"]).drop_duplicates(subset=["identity_key", "category"], keep="first").drop(columns=["source_rank", "priority_rank", "identity_key"])
+    expected_previous = previous
+    if not prior_frame.empty and "category" in prior_frame:
+        comparable = prior_frame[
+            ~prior_frame.category.isin(EXCLUDED_CATEGORIES)
+            & ~prior_frame.name.map(clean_name).isin(INVALID_ENTITY_NAMES)
+        ].copy()
+        comparable["identity_key"] = [person_identity_key(name, category) for name, category in zip(comparable.name, comparable.category)]
+        expected_previous = len(comparable.drop_duplicates(subset=["identity_key", "category"]))
+    if len(frame) < expected_previous:
+        raise SystemExit(f"Safety stop: target universe shrank unexpectedly from {previous} to {len(frame)}")
     frame.to_csv("targets.csv", index=False, encoding="utf-8-sig")
     counts = frame.category.value_counts().to_dict()
-    summary = {"discovery_version": DISCOVERY_VERSION, "total": len(frame), "previous": previous, "moh_official_records": moh, "ima_gynecology": ima, "categories": counts, "discovery": discovery}
+    summary = {
+        "discovery_version": DISCOVERY_VERSION,
+        "total": len(frame),
+        "previous": previous,
+        "moh_records_refreshed": moh,
+        "moh_targets_retained": int((frame.seed_type == "moh").sum()),
+        "ima_official_profiles": ima,
+        "categories": counts,
+        "discovery": discovery,
+    }
     Path("seed_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False))
     if counts.get("gynecologist", 0) < 300:

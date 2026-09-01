@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import shutil
-from collections import Counter
 from pathlib import Path
 
 import pandas as pd
@@ -72,21 +71,13 @@ def main():
     frame = frame.sort_values(['priority', 'status', 'confidence'], ascending=[True, True, False])
     frame = frame.drop_duplicates(subset=['name', 'category'], keep='first')
 
-    expanded = agent.expand_verified_contacts(frame)
-    repeated = set()
-    if not expanded.empty:
-        person = expanded[expanded.target_kind == 'person']
-        repeated = {email for email, count in Counter(person.email).items() if count > 2}
-    if repeated:
-        mask = (frame.target_kind == 'person') & frame.email.isin(repeated)
-        frame.loc[mask, 'status'] = 'REVIEW_SHARED_EMAIL'
-        frame.loc[mask, 'confidence'] = 0
+    expanded = agent.annotate_shared_contacts(agent.expand_verified_contacts(frame))
 
     safe_frame = sanitize_frame(frame)
     safe_frame.to_csv(OUT / 'audit.csv', index=False, encoding='utf-8-sig')
     safe_frame.to_excel(OUT / 'audit.xlsx', index=False)
 
-    found = expanded[~expanded.email.isin(repeated)].copy() if not expanded.empty else pd.DataFrame(columns=list(frame.columns) + ['candidate_rank'])
+    found = expanded.copy() if not expanded.empty else pd.DataFrame(columns=list(frame.columns) + ['candidate_rank'])
     found = found.sort_values(['priority', 'confidence'], ascending=[True, False]).drop_duplicates(subset=['email'], keep='first')
     safe_found = sanitize_frame(found)
     safe_found.to_csv(OUT / 'contacts.csv', index=False, encoding='utf-8-sig')
@@ -95,13 +86,19 @@ def main():
     review = sanitize_frame(frame[frame.status.str.startswith('REVIEW')].copy())
     review.to_excel(OUT / 'review.xlsx', index=False)
 
+    target_total = len(pd.read_csv('targets.csv')) if Path('targets.csv').exists() else len(frame)
     summary = {
         'algo_version': ALGO_VERSION,
-        'total_targets': int(len(frame)),
+        'total_targets': int(target_total),
+        'touched_targets': int(len(frame)),
+        'resolved_targets': int((~frame.status.str.startswith('PENDING')).sum()),
         'verified': int((frame.status == 'VERIFIED').sum()),
         'not_verified': int((frame.status == 'NO_VERIFIED_PUBLIC_EMAIL').sum()),
+        'pending': int(frame.status.str.startswith('PENDING').sum()),
         'review': int(frame.status.str.startswith('REVIEW').sum()),
         'unique_emails': int(found.email.nunique()),
+        'direct_emails': int(found.extraction_method.fillna('').str.startswith(('direct_', 'official_')).sum()) if not found.empty else 0,
+        'institutional_emails': int((found.email_type == 'CLINIC_OR_ORGANIZATION').sum()) if not found.empty else 0,
         'by_category': frame.groupby('category').status.value_counts().unstack(fill_value=0).to_dict('index'),
     }
     (OUT / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -111,18 +108,20 @@ def main():
     validate_xlsx(OUT / 'contacts.xlsx', expected_min_rows=len(found))
     validate_xlsx(OUT / 'review.xlsx', expected_min_rows=len(review))
 
-    shutil.copy2(OUT / 'contacts.xlsx', FINAL / 'contacts_FINAL.xlsx')
-    shutil.copy2(OUT / 'audit.xlsx', FINAL / 'audit_FINAL.xlsx')
-    shutil.copy2(OUT / 'review.xlsx', FINAL / 'review_FINAL.xlsx')
-    shutil.copy2(OUT / 'summary.json', FINAL / 'summary_FINAL.json')
-    if (OUT / 'COMPLETE.txt').exists():
+    completion = (OUT / 'COMPLETE.txt').read_text(encoding='utf-8', errors='ignore') if (OUT / 'COMPLETE.txt').exists() else ''
+    if completion.startswith('COMPLETE') and f'algo_version={ALGO_VERSION}' in completion:
+        shutil.copy2(OUT / 'contacts.xlsx', FINAL / 'contacts_FINAL.xlsx')
+        shutil.copy2(OUT / 'audit.xlsx', FINAL / 'audit_FINAL.xlsx')
+        shutil.copy2(OUT / 'review.xlsx', FINAL / 'review_FINAL.xlsx')
+        shutil.copy2(OUT / 'summary.json', FINAL / 'summary_FINAL.json')
         shutil.copy2(OUT / 'COMPLETE.txt', FINAL / 'COMPLETE.txt')
-    if Path('seed_summary.json').exists():
-        shutil.copy2('seed_summary.json', FINAL / 'seed_summary_FINAL.json')
-
-    validate_xlsx(FINAL / 'contacts_FINAL.xlsx', expected_min_rows=len(found))
-    validate_xlsx(FINAL / 'audit_FINAL.xlsx', expected_min_rows=len(frame))
-    validate_xlsx(FINAL / 'review_FINAL.xlsx', expected_min_rows=len(review))
+        if Path('seed_summary.json').exists():
+            shutil.copy2('seed_summary.json', FINAL / 'seed_summary_FINAL.json')
+        validate_xlsx(FINAL / 'contacts_FINAL.xlsx', expected_min_rows=len(found))
+        validate_xlsx(FINAL / 'audit_FINAL.xlsx', expected_min_rows=len(frame))
+        validate_xlsx(FINAL / 'review_FINAL.xlsx', expected_min_rows=len(review))
+    else:
+        print('Research incomplete; current reports validated but FINAL files were not replaced.')
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
