@@ -2,14 +2,14 @@
   "algo_version": 7,
   "total_targets": 7525,
   "touched_targets": 7525,
-  "resolved_targets": 742,
-  "verified": 664,
-  "not_verified": 78,
-  "pending": 6783,
+  "resolved_targets": 842,
+  "verified": 686,
+  "not_verified": 156,
+  "pending": 6683,
   "review": 0,
-  "unique_emails": 394,
-  "direct_emails": 370,
-  "institutional_emails": 50,
+  "unique_emails": 410,
+  "direct_emails": 385,
+  "institutional_emails": 53,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -97,9 +97,9 @@
       "VERIFIED": 3
     },
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 78,
-      "PENDING_SEARCH_PROVIDER": 2261,
-      "VERIFIED": 19
+      "NO_VERIFIED_PUBLIC_EMAIL": 156,
+      "PENDING_SEARCH_PROVIDER": 2161,
+      "VERIFIED": 41
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
