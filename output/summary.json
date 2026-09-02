@@ -2,18 +2,18 @@
   "algo_version": 7,
   "total_targets": 7525,
   "touched_targets": 7525,
-  "resolved_targets": 911,
-  "verified": 693,
-  "not_verified": 218,
-  "pending": 6614,
+  "resolved_targets": 995,
+  "verified": 712,
+  "not_verified": 283,
+  "pending": 6530,
   "review": 0,
-  "unique_emails": 413,
-  "direct_emails": 388,
-  "institutional_emails": 54,
+  "unique_emails": 423,
+  "direct_emails": 393,
+  "institutional_emails": 59,
   "by_category": {
     "birth_center": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_SEARCH_PROVIDER": 39,
+      "NO_VERIFIED_PUBLIC_EMAIL": 2,
+      "PENDING_SEARCH_PROVIDER": 37,
       "VERIFIED": 9
     },
     "childbirth_educator": {
@@ -67,9 +67,9 @@
       "VERIFIED": 12
     },
     "fertility_association": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_SEARCH_PROVIDER": 15,
-      "VERIFIED": 4
+      "NO_VERIFIED_PUBLIC_EMAIL": 1,
+      "PENDING_SEARCH_PROVIDER": 13,
+      "VERIFIED": 5
     },
     "fertility_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -97,13 +97,13 @@
       "VERIFIED": 3
     },
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 218,
-      "PENDING_SEARCH_PROVIDER": 2092,
-      "VERIFIED": 48
+      "NO_VERIFIED_PUBLIC_EMAIL": 277,
+      "PENDING_SEARCH_PROVIDER": 2016,
+      "VERIFIED": 65
     },
     "ivf_unit": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_SEARCH_PROVIDER": 15,
+      "NO_VERIFIED_PUBLIC_EMAIL": 2,
+      "PENDING_SEARCH_PROVIDER": 13,
       "VERIFIED": 2
     },
     "lactation": {
@@ -152,9 +152,9 @@
       "VERIFIED": 8
     },
     "sperm_bank": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_SEARCH_PROVIDER": 14,
-      "VERIFIED": 5
+      "NO_VERIFIED_PUBLIC_EMAIL": 1,
+      "PENDING_SEARCH_PROVIDER": 12,
+      "VERIFIED": 6
     },
     "women_health_creator": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
