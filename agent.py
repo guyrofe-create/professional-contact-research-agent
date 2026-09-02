@@ -370,19 +370,32 @@ def main():
     rows=load_input(args.input); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in stored.values()),encoding="utf-8")
     if not args.export_only:
         with checkpoint.open("a",encoding="utf-8") as stream:
-            direct=[]; fresh=[]; retry=[]; now=datetime.now(timezone.utc)
+            direct=[]; fresh=[]; retry=[]; deferred=[]; now=datetime.now(timezone.utc)
             for row in rows:
                 key=(str(row.get("name","")).strip(),str(row.get("category","")).strip())
                 previous=stored.get(key)
                 if previous and not str(previous.get("status","")).startswith("PENDING_"):continue
                 if previous:
-                    try:due=datetime.fromisoformat(str(previous.get("next_retry_at","")).replace("Z","+00:00"))<=now
-                    except (ValueError,TypeError):due=True
-                    if due:retry.append(dict(row)|{"retry_count":previous.get("retry_count",0)})
+                    candidate=dict(row)|{"retry_count":previous.get("retry_count",0)}
+                    try:
+                        retry_at=datetime.fromisoformat(str(previous.get("next_retry_at","")).replace("Z","+00:00"))
+                        due=retry_at<=now
+                    except (ValueError,TypeError):
+                        retry_at=now; due=True
+                    if due:retry.append(candidate)
+                    else:deferred.append((retry_at,candidate))
                 elif usable_identity_seed(str(row.get("seed_source","")).strip()):direct.append(row)
                 else:fresh.append(row)
+            if not (direct or fresh or retry) and deferred:
+                deferred.sort(key=lambda item:item[0])
+                probe_count=min(250,args.max_targets,len(deferred))
+                retry=[row for _,row in deferred[:probe_count]]
+                print(f"No retries due; probing {probe_count} deferred targets to verify provider recovery",flush=True)
             queue=(direct+fresh+retry)[:args.max_targets]
             for index,row in enumerate(queue,1):
+                if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:
+                    print(f"Stopping shift safely at provider/search limit after {index-1} targets and {SEARCH_CALLS} search calls",flush=True)
+                    break
                 key=(str(row.get("name","")).strip(),str(row.get("category","")).strip())
                 print(f"[{index}/{len(queue)}] {key[0]} | {key[1]}",flush=True); result=research(row); stored[key]=result; stream.write(json.dumps(result,ensure_ascii=False)+"\n"); stream.flush()
     frame=pd.DataFrame(list(stored.values()))
