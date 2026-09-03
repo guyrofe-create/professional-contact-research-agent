@@ -1,17 +1,17 @@
 {
-  "algo_version": 9,
+  "algo_version": 10,
   "total_targets": 7194,
   "touched_targets": 7194,
   "resolved_targets": 7036,
-  "verified": 620,
-  "not_verified": 6416,
+  "verified": 619,
+  "not_verified": 6417,
   "pending": 158,
   "review": 0,
-  "unique_emails": 364,
-  "personalization_safe_emails": 37,
-  "organization_or_shared_routes": 327,
-  "direct_emails": 342,
-  "institutional_emails": 40,
+  "unique_emails": 362,
+  "personalization_safe_emails": 36,
+  "organization_or_shared_routes": 326,
+  "direct_emails": 341,
+  "institutional_emails": 39,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 39,
@@ -44,9 +44,9 @@
       "VERIFIED": 8
     },
     "doula": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 34,
+      "NO_VERIFIED_PUBLIC_EMAIL": 35,
       "PENDING_SEARCH_PROVIDER": 0,
-      "VERIFIED": 3
+      "VERIFIED": 2
     },
     "doula_school": {
       "NO_VERIFIED_PUBLIC_EMAIL": 16,

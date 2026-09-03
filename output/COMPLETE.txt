@@ -3,4 +3,4 @@ completed=7036
 touched=7194
 pending=158
 targets=7194
-algo_version=9
+algo_version=10
