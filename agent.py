@@ -19,7 +19,8 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 12
+ALGO_VERSION = 11
+FAMILY_ROUTE_VERSION = 1
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -403,7 +404,7 @@ def annotate_shared_contacts(expanded):
         ]
     return result
 def research(row):
-    name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
+    name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"family_route_version":FAMILY_ROUTE_VERSION if category=="family_doctor" else 0,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
     if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name,category)):
         return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]","last_attempt_at":datetime.now(timezone.utc).isoformat()}
     def inspect_hit(hit):
@@ -478,14 +479,16 @@ def stored_candidate_still_safe(record):
 
 def migrate_checkpoint_row(record):
     result=dict(record)
-    if int(result.get("algo_version",0) or 0)==ALGO_VERSION:return result
+    if int(result.get("algo_version",0) or 0)==ALGO_VERSION:
+        if result.get("category")!="family_doctor" or int(result.get("family_route_version",0) or 0)>=FAMILY_ROUTE_VERSION:return result
+        result.update({"family_route_version":FAMILY_ROUTE_VERSION,"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
+        return result
     source_version=int(result.get("algo_version",0) or 0)
-    if source_version not in {7,8,9,10,11}:return None
+    if source_version not in {7,8,9,10}:return None
     old_status=str(result.get("status",""))
     result["algo_version"]=ALGO_VERSION
     if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result
     if old_status.startswith("REVIEW_INVALID_TARGET_NAME"):return result
-    if source_version==11 and result.get("category")!="family_doctor":return result
     if source_version in {8,9,10} and old_status not in {"VERIFIED","NO_VERIFIED_PUBLIC_EMAIL"}:return result
     result["previous_status"]=old_status
     if old_status=="VERIFIED":
