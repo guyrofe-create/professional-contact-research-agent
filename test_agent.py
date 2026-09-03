@@ -189,7 +189,7 @@ class IdentityValidationTests(unittest.TestCase):
             with patch.object(agent, "_search_once", side_effect=RuntimeError("No results found.")) as search:
                 state = {}
                 self.assertEqual([], list(agent.search_web("דוד כהן", "gynecologist", state=state)))
-            self.assertEqual(2, search.call_count)
+            self.assertEqual(len(agent.search_queries("דוד כהן", "gynecologist")), search.call_count)
             self.assertEqual(0, state["errors"])
             self.assertFalse(agent.SEARCH_CIRCUIT_OPEN)
         finally:
@@ -230,7 +230,7 @@ class IdentityValidationTests(unittest.TestCase):
         old = {"algo_version": 8, "name": "דוד כהן", "category": "gynecologist", "status": "NO_VERIFIED_PUBLIC_EMAIL"}
         migrated = agent.migrate_checkpoint_row(old)
         self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
-        self.assertEqual("NO_VERIFIED_PUBLIC_EMAIL", migrated["status"])
+        self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
 
     def test_marketing_agency_contact_is_not_attributed_to_a_person(self):
         old = {"algo_version": 9, "name": "אורנית טפירו ישראל", "category": "doula", "status": "VERIFIED", "email": "office@get-marketing.co.il", "source_url": "https://get-marketing.co.il/#contact", "identity_url": "https://get-marketing.co.il/oranit-dula/"}

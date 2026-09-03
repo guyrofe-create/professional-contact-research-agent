@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 10
+ALGO_VERSION = 11
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -37,7 +37,7 @@ NON_OUTREACH_LOCAL_EXACT = {"zimun", "appointments", "torim", "webmaster"}
 GENERIC_LOCAL = {"info", "office", "clinic", "contact", "mail", "reception", "admin", "secretary", "nashim", "service", "hello", "igudyhanaka", "customerservice", "visitors", "1800", "general", "center", "centre"}
 INSTITUTION_ROLE_PARTS = ("clinic", "unit", "ivf", "nashim", "dept", "department", "office", "secretary", "reception", "center", "centre", "admin")
 FREE_MAIL = {"gmail.com", "walla.co.il", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "bezeqint.net", "012.net.il", "netvision.net.il"}
-BLOCKED_DOMAINS = {"google.com", "youtube.com", "wikipedia.org", "wiktionary.org", "linkedin.com", "twitter.com", "rocketreach.co", "zoominfo.com", "prospeo.io", "hunter.io", "apollo.io", "stockanalysis.com", "yahoo.com", "investing.com", "pinterest.com", "mako.co.il", "ynet.co.il", "maariv.co.il", "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br", "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com", "asli.org.il", "choosingwisely.org.il", "doctorsonly.co.il", "get-marketing.co.il"}
+BLOCKED_DOMAINS = {"google.com", "youtube.com", "wikipedia.org", "wiktionary.org", "linkedin.com", "twitter.com", "rocketreach.co", "zoominfo.com", "prospeo.io", "hunter.io", "apollo.io", "stockanalysis.com", "yahoo.com", "investing.com", "pinterest.com", "mako.co.il", "ynet.co.il", "maariv.co.il", "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br", "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com", "asli.org.il", "choosingwisely.org.il", "get-marketing.co.il"}
 TRUSTED_REGISTRIES = {"ima.org.il", "practitioners.health.gov.il", "gov.il", "doctors.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "maccabi4u.co.il", "clalit.co.il", "meuhedet.co.il", "leumit.co.il", "sheba.co.il", "tasmc.org.il", "hadassah.org.il", "rambam.org.il", "assuta.co.il", "hospitals.clalit.co.il", "ialp.org.il", "midwives.org.il"}
 GENERAL_CONTENT_PATHS = ("/article", "/articles", "/blog", "/news", "/magazine", "/forum", "/forums", "/podcast", "/כתבות", "/מאמר", "/חדשות", "/פורום")
 DIRECTORY_DOMAINS = ("doctors.co.il", "doctorim.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "medico.co.il", "beok.co.il", "medpage.co.il", "ima.org.il", "miok.co.il", "bikurofe.co.il", "d.co.il", "easy.co.il", "freeindex.co.il", "doctorindex.co.il", "zap.co.il", "forty.co.il", "prog.co.il", "b144.co.il", "israelbusinessguide.com")
@@ -168,8 +168,19 @@ def valid_person_target_name(name,category=""):
 def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
     search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
-    queries=[f'{quoted} {profession} מייל',f'{quoted} email']
-    return queries[:2]
+    queries=[f'{quoted} {profession}',f'{quoted} מייל',f'{quoted} email']
+    if category=="family_doctor":
+        queries += [
+            f'{quoted} (site:clalit.co.il OR site:maccabi4u.co.il OR site:meuhedet.co.il OR site:leumit.co.il)',
+            f'{quoted} מרפאה קופת חולים צור קשר',
+        ]
+    elif category in {"gynecologist","fertility_doctor"}:
+        queries += [f'{quoted} מרפאה אתר רשמי',f'{quoted} צור קשר']
+    elif category in {"doula","midwife","childbirth_educator"}:
+        queries += [f'{quoted} אתר רשמי צור קשר',f'{quoted} אינדקס']
+    elif category in {"facebook_group_admin","community_manager"}:
+        queries += [f'{quoted} מנהלת קהילה',f'{quoted} מנהל קבוצה צור קשר']
+    return list(dict.fromkeys(queries))
 def usable_identity_seed(seed_source):
     if not seed_source.startswith("http") or blocked_url(seed_source):return False
     path=urlparse(seed_source).path.lower()
@@ -184,7 +195,25 @@ def _search_once(query,max_results):
         response=http_session().get("https://serpapi.com/search.json",params={"engine":"google","q":query,"gl":"il","hl":"he","num":max_results,"api_key":serpapi_key},timeout=(5,20))
         response.raise_for_status()
         return [{"href":x.get("link",""),"title":x.get("title",""),"body":x.get("snippet","")} for x in response.json().get("organic_results",[])],"serpapi"
-    return DDGS(timeout=8).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend=SEARCH_BACKENDS) or [],"ddgs"
+    # A comma-separated backend value can silently yield no results in some ddgs
+    # releases. Query each configured provider independently and then fall back to
+    # auto. An empty answer from one provider is not proof that the target has no
+    # public web presence.
+    backends=[x.strip() for x in SEARCH_BACKENDS.split(",") if x.strip()]
+    backends += ["auto"]
+    collected=[]; seen=set(); last_error=None
+    for backend in dict.fromkeys(backends):
+        try:
+            rows=DDGS(timeout=12).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend=backend) or []
+            for row in rows:
+                url=row.get("href") or row.get("url") or ""
+                if url and url not in seen:
+                    seen.add(url); collected.append(row)
+            if collected: return collected,f"ddgs:{backend}"
+        except Exception as exc:
+            if "No results found" not in str(exc): last_error=exc
+    if last_error: raise last_error
+    return [],"ddgs:empty"
 def search_web(name,category,license_number="",max_results=10,state=None):
     global SEARCH_CONSECUTIVE_FAILURES,SEARCH_CIRCUIT_OPEN
     state=state if state is not None else {}; state.update({"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False})
@@ -419,7 +448,9 @@ def research(row):
     candidates=ranked_candidates(candidates)
     if candidates:
         score,email,source,evidence,query,method,identity_url=candidates[0]; alternates=[serialized_candidate(x) for x in candidates[1:3]]; return base|{"email":email,"email_type":classify(email,category),"confidence":score,"source_url":source,"identity_url":identity_url,"status":"VERIFIED","evidence":evidence,"matched_query":query,"extraction_method":method,"alternate_emails":json.dumps(alternates,ensure_ascii=False),"candidate_count":len(candidates),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False),"last_attempt_at":datetime.now(timezone.utc).isoformat()}
-    pending=search_state.get("circuit_open") or (search_state.get("results",0)==0 and search_state.get("errors",0)>0) or (search_state.get("results",0)>0 and search_state.get("pages_fetched",0)==0)
+    # Zero search results is inconclusive. It must remain retryable instead of
+    # being permanently recorded as "no public email".
+    pending=search_state.get("circuit_open") or search_state.get("results",0)==0 or (search_state.get("results",0)>0 and search_state.get("pages_fetched",0)==0)
     retry_count=int(row.get("retry_count",0) or 0)+(1 if pending else 0)
     next_retry=(datetime.now(timezone.utc)+timedelta(hours=min(72,6*(2**min(retry_count,3))))).isoformat() if pending else ""
     status="PENDING_SEARCH_PROVIDER" if pending else "NO_VERIFIED_PUBLIC_EMAIL"
@@ -442,12 +473,12 @@ def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:return result
     source_version=int(result.get("algo_version",0) or 0)
-    if source_version not in {7,8,9}:return None
+    if source_version not in {7,8,9,10}:return None
     old_status=str(result.get("status",""))
     result["algo_version"]=ALGO_VERSION
     if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result
     if old_status.startswith("REVIEW_INVALID_TARGET_NAME"):return result
-    if source_version in {8,9} and old_status!="VERIFIED":return result
+    if source_version in {8,9,10} and old_status not in {"VERIFIED","NO_VERIFIED_PUBLIC_EMAIL"}:return result
     result["previous_status"]=old_status
     if old_status=="VERIFIED":
         result["previous_candidate"]=json.dumps({key:record.get(key,"") for key in ("email","confidence","source_url","identity_url","evidence","matched_query","extraction_method")},ensure_ascii=False)
