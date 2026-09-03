@@ -78,30 +78,15 @@ jobs:
         run: |
           mkdir -p output
           date -u +%Y-%m-%dT%H:%M:%SZ > output/last_heartbeat.txt
-          python - <<'PY'
-          from pathlib import Path
-          import csv,json
-          VERSION=11
-          with open('targets.csv',encoding='utf-8-sig') as f:
-              targets=sum(1 for _ in csv.DictReader(f))
-          latest={}; cp=Path('output/checkpoint.jsonl')
-          if cp.exists():
-              for line in cp.read_text(encoding='utf-8',errors='ignore').splitlines():
-                  try:
-                      row=json.loads(line)
-                      if row.get('algo_version')==VERSION:
-                          latest[(row.get('name',''),row.get('category',''))]=row
-                  except Exception: pass
-          touched=set(latest); pending={key for key,row in latest.items() if str(row.get('status','')).startswith('PENDING')}
-          keys=touched-pending; done=len(keys); complete=targets>0 and done>=targets
-          state=f'completed={done}\ntouched={len(touched)}\npending={len(pending)}\ntargets={targets}\nalgo_version={VERSION}\n'
-          Path('output/progress.txt').write_text(state,encoding='utf-8')
-          Path('output/COMPLETE.txt').write_text(('COMPLETE' if complete else 'IN_PROGRESS')+'\n'+state,encoding='utf-8')
-          print(f'completed={done} touched={len(touched)} pending={len(pending)} targets={targets} complete={complete}')
-          PY
+          git fetch origin main
+          remote_checkpoint=$(mktemp)
+          if git show origin/main:output/checkpoint.jsonl > "$remote_checkpoint"; then
+            python merge_checkpoints.py output/checkpoint.jsonl "$remote_checkpoint" --output output/checkpoint.jsonl
+          fi
+          python finalize_state.py
       - name: Generate and validate checkpoint reports
         if: always()
-        run: python export_outputs.py
+        run: python finalize_state.py
       - name: Commit checkpoint and QA outputs safely
         if: always()
         run: |
@@ -115,7 +100,17 @@ jobs:
           pushed=false
           for attempt in 1 2 3; do
             git fetch origin main
-            git rebase -X theirs origin/main
+            if ! git rebase -X ours origin/main; then
+              git rebase --abort
+              exit 1
+            fi
+            remote_checkpoint=$(mktemp)
+            if git show origin/main:output/checkpoint.jsonl > "$remote_checkpoint"; then
+              python merge_checkpoints.py output/checkpoint.jsonl "$remote_checkpoint" --output output/checkpoint.jsonl
+              python finalize_state.py
+              git add -- targets.csv seed_summary.json output final
+              git commit --amend --no-edit
+            fi
             if git push origin HEAD:main; then
               pushed=true
               break
