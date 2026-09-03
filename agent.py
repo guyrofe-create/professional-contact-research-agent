@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
 import re
+import threading
 import time
 import unicodedata
 from datetime import datetime, timedelta, timezone
@@ -17,7 +19,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 7
+ALGO_VERSION = 8
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -38,7 +40,7 @@ FREE_MAIL = {"gmail.com", "walla.co.il", "yahoo.com", "hotmail.com", "outlook.co
 BLOCKED_DOMAINS = {"google.com", "youtube.com", "wikipedia.org", "wiktionary.org", "linkedin.com", "twitter.com", "rocketreach.co", "zoominfo.com", "prospeo.io", "hunter.io", "apollo.io", "stockanalysis.com", "yahoo.com", "investing.com", "pinterest.com", "mako.co.il", "ynet.co.il", "maariv.co.il", "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br", "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com", "asli.org.il", "choosingwisely.org.il", "doctorsonly.co.il"}
 TRUSTED_REGISTRIES = {"ima.org.il", "practitioners.health.gov.il", "gov.il", "doctors.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "maccabi4u.co.il", "clalit.co.il", "meuhedet.co.il", "leumit.co.il", "sheba.co.il", "tasmc.org.il", "hadassah.org.il", "rambam.org.il", "assuta.co.il", "hospitals.clalit.co.il", "ialp.org.il", "midwives.org.il"}
 GENERAL_CONTENT_PATHS = ("/article", "/articles", "/blog", "/news", "/magazine", "/forum", "/forums", "/podcast", "/כתבות", "/מאמר", "/חדשות", "/פורום")
-DIRECTORY_DOMAINS = ("doctors.co.il", "doctorim.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "medico.co.il", "beok.co.il", "medpage.co.il", "ima.org.il", "d.co.il", "easy.co.il", "freeindex.co.il", "doctorindex.co.il", "zap.co.il", "forty.co.il", "prog.co.il", "b144.co.il", "israelbusinessguide.com")
+DIRECTORY_DOMAINS = ("doctors.co.il", "doctorim.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "medico.co.il", "beok.co.il", "medpage.co.il", "ima.org.il", "miok.co.il", "bikurofe.co.il", "d.co.il", "easy.co.il", "freeindex.co.il", "doctorindex.co.il", "zap.co.il", "forty.co.il", "prog.co.il", "b144.co.il", "israelbusinessguide.com")
 CONTACT_WORDS = ("contact", "about", "email", "team", "staff", "צור-קשר", "צור קשר", "אודות", "דוא״ל", "דואר אלקטרוני", "צוות")
 OFFICIAL_LINK_WORDS = ("website", "official site", "personal site", "clinic site", "אתר", "אתר אישי", "אתר המרפאה")
 PROFILE_PATH_HINTS = ("doctorprofile", "/doctor/", "/doctors/", "/experts/", "/profile/", "/people/", "doctorssearch/dr/")
@@ -64,13 +66,36 @@ CATEGORY_CONFIG = {
     "womens_health_center": {"priority": "A", "terms": ["מרכז בריאות האישה", "מרפאת נשים", "בריאות האישה", "women health"], "kind": "org"},
     "community_clinic": {"priority": "B", "terms": ["מרפאה קהילתית", "מרפאת משפחה", "מרכז רפואי", "רפואה ראשונית"], "kind": "org"},
     "fertility_doctor": {"priority": "A", "terms": ["פוריות", "פריון", "ivf", "שימור פוריות"], "kind": "person"}, "ivf_unit": {"priority": "A", "terms": ["ivf", "הפריה חוץ גופית", "יחידת פוריות"], "kind": "org"}, "fertility_center": {"priority": "A", "terms": ["מרכז פוריות", "מרפאת פוריות", "פריון"], "kind": "org"}, "embryologist": {"priority": "A", "terms": ["אמבריולוג", "embryologist", "ivf"], "kind": "person"}, "fertility_nurse": {"priority": "A", "terms": ["אחות פוריות", "אחות פריון", "ivf"], "kind": "person"}, "fertility_consultant": {"priority": "A", "terms": ["יועצת פוריות", "יועץ פוריות", "פריון"], "kind": "person"}, "sperm_bank": {"priority": "A", "terms": ["בנק זרע", "תרומת זרע"], "kind": "org"}, "fertility_preservation": {"priority": "A", "terms": ["שימור פוריות"], "kind": "org"}, "fertility_association": {"priority": "A", "terms": ["עמותת פוריות", "ארגון פוריות", "פריון"], "kind": "org"}, "doula": {"priority": "A", "terms": ["דולה", "doula", "תומכת לידה"], "kind": "person"}, "midwife": {"priority": "A", "terms": ["מיילדת", "midwife"], "kind": "person"}, "childbirth_educator": {"priority": "A", "terms": ["הכנה ללידה", "מדריכת לידה"], "kind": "person"}, "birth_center": {"priority": "A", "terms": ["מרכז לידה", "חדר לידה", "יולדות"], "kind": "org"}, "lactation": {"priority": "B", "terms": ["יועצת הנקה", "ibclc", "הנקה"], "kind": "person"}, "pelvic_floor": {"priority": "B", "terms": ["רצפת אגן", "פיזיותרפיה"], "kind": "person"}, "sleep_consultant": {"priority": "B", "terms": ["יועצת שינה", "ייעוץ שינה"], "kind": "person"}, "pregnancy_dietitian": {"priority": "B", "terms": ["דיאטנית", "תזונה", "הריון", "פוריות"], "kind": "person"}, "parenting_center": {"priority": "B", "terms": ["מרכז הורות", "הורים ותינוקות"], "kind": "org"}, "perinatal_mental_health": {"priority": "B", "terms": ["פסיכולוג", "טיפול רגשי", "הריון", "פוריות"], "kind": "person"}, "facebook_group_admin": {"priority": "C", "terms": ["קבוצת פייסבוק", "הריון", "פוריות"], "kind": "community"}, "community_manager": {"priority": "C", "terms": ["קהילה", "הריון", "פוריות"], "kind": "community"}, "parenting_site": {"priority": "C", "terms": ["הורות", "הריון", "לידה"], "kind": "org"}, "pregnancy_podcast": {"priority": "C", "terms": ["פודקאסט", "הריון", "פוריות"], "kind": "creator"}, "doula_school": {"priority": "C", "terms": ["בית ספר לדולות", "קורס דולות"], "kind": "org"}, "childbirth_school": {"priority": "C", "terms": ["הכנה ללידה", "קורס מדריכות"], "kind": "org"}, "women_health_creator": {"priority": "C", "terms": ["בריאות האישה", "הריון", "לידה"], "kind": "creator"}}
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/7.0; public-contact-research)"}
-SESSION = requests.Session(); SESSION.headers.update(HEADERS)
-SEARCH_CALL_LIMIT = int(os.getenv("SEARCH_CALL_LIMIT", "250"))
-SEARCH_CIRCUIT_FAILURES = int(os.getenv("SEARCH_CIRCUIT_FAILURES", "4"))
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/8.0; public-contact-research)"}
+SEARCH_CALL_LIMIT = int(os.getenv("SEARCH_CALL_LIMIT", "12000"))
+SEARCH_CIRCUIT_FAILURES = int(os.getenv("SEARCH_CIRCUIT_FAILURES", "20"))
+SEARCH_BACKENDS = os.getenv("SEARCH_BACKENDS", "bing,brave,duckduckgo").strip()
+RESEARCH_WORKERS = max(1, int(os.getenv("RESEARCH_WORKERS", "4")))
 SEARCH_CALLS = 0
 SEARCH_CONSECUTIVE_FAILURES = 0
 SEARCH_CIRCUIT_OPEN = False
+SEARCH_LOCK = threading.Lock()
+THREAD_LOCAL = threading.local()
+
+PERSON_ROLE_REJECT = {
+    "sales", "marketing", "international", "logistics", "support", "customerservice",
+    "service", "visitors", "billing", "finance", "media", "press",
+}
+GENERIC_PERSON_TARGET_PHRASES = {
+    "ועידה", "ועידת", "כנס", "רופאים פרטיים", "רופא משפחה פרטי", "יומן", "מאמר", "כתבה",
+    "טיפול", "טיפולים", "פיזיותרפיה", "דיכאון", "פלטפורמת", "רשימה של", "יחידות",
+    "הרשמה וקבלה", "קניה ומכירה", "אודות אתר", "בלוג", "מדריך", "מרכז רפואי",
+    "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
+}
+
+
+def http_session():
+    session = getattr(THREAD_LOCAL, "session", None)
+    if session is None:
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        THREAD_LOCAL.session = session
+    return session
 
 def norm(value): return re.sub(r"[^a-z0-9\u0590-\u05ff]+", " ", unicodedata.normalize("NFKD", str(value or "")).lower()).strip()
 def tokens(value): return [x for x in norm(value).split() if len(x)>=2 and x not in {"דר","דוקטור","פרופ","פרופסור","doctor","prof"}]
@@ -120,23 +145,37 @@ def valid_email(email):
     return True
 def local_name_match(email,name):
     local=norm(email.split("@",1)[0]).replace(" ",""); latin=[x for x in tokens(name) if re.search("[a-z]",x) and len(x)>=3]; return bool(latin) and any(x in local for x in latin)
+def normalized_local(email):
+    return re.sub(r"[^a-z]+","",email.split("@",1)[0].lower())
+def role_address(email):
+    local=normalized_local(email)
+    return local in GENERIC_LOCAL or any(part in local for part in INSTITUTION_ROLE_PARTS) or local in PERSON_ROLE_REJECT
+def forbidden_person_role(email): return normalized_local(email) in PERSON_ROLE_REJECT
+def valid_person_target_name(name):
+    value=norm(name)
+    if not value or any(norm(phrase) in value for phrase in GENERIC_PERSON_TARGET_PHRASES):return False
+    words=tokens(name)
+    return 2<=len(words)<=6 and not any(word.isdigit() for word in words) and not any(char in str(name) for char in ("?", "!", "@"))
 def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
-    search_name=" ".join(tokens(name)); queries=[f'{search_name} {profession}',f'{search_name} מייל email']
+    search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
+    queries=[f'{quoted} {profession} מייל',f'{quoted} email']
     return queries[:2]
 def usable_identity_seed(seed_source):
     if not seed_source.startswith("http") or blocked_url(seed_source):return False
     path=urlparse(seed_source).path.lower()
     return not (host(seed_source).endswith("data.gov.il") and ("dataset" in path or "datastore" in path))
 def _search_once(query,max_results):
-    global SEARCH_CALLS
-    SEARCH_CALLS+=1
+    global SEARCH_CALLS,SEARCH_CIRCUIT_OPEN
+    with SEARCH_LOCK:
+        if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:return [],"limit"
+        SEARCH_CALLS+=1
     serpapi_key=os.getenv("SERPAPI_KEY","").strip()
     if serpapi_key:
-        response=SESSION.get("https://serpapi.com/search.json",params={"engine":"google","q":query,"gl":"il","hl":"he","num":max_results,"api_key":serpapi_key},timeout=(5,20))
+        response=http_session().get("https://serpapi.com/search.json",params={"engine":"google","q":query,"gl":"il","hl":"he","num":max_results,"api_key":serpapi_key},timeout=(5,20))
         response.raise_for_status()
         return [{"href":x.get("link",""),"title":x.get("title",""),"body":x.get("snippet","")} for x in response.json().get("organic_results",[])],"serpapi"
-    return DDGS(timeout=10).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend="auto") or [],"ddgs"
+    return DDGS(timeout=8).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend=SEARCH_BACKENDS) or [],"ddgs"
 def search_web(name,category,license_number="",max_results=10,state=None):
     global SEARCH_CONSECUTIVE_FAILURES,SEARCH_CIRCUIT_OPEN
     state=state if state is not None else {}; state.update({"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False})
@@ -149,13 +188,21 @@ def search_web(name,category,license_number="",max_results=10,state=None):
         state["queries"]+=1
         try:
             results,provider=_search_once(query,max_results); state["provider"]=provider
-            SEARCH_CONSECUTIVE_FAILURES=0
+            if provider=="limit":state["circuit_open"]=True; break
+            with SEARCH_LOCK:SEARCH_CONSECUTIVE_FAILURES=0
         except Exception as exc:
-            state["errors"]+=1; SEARCH_CONSECUTIVE_FAILURES+=1
+            message=str(exc)
+            if "No results found" in message:
+                state["provider"]="ddgs"
+                with SEARCH_LOCK:SEARCH_CONSECUTIVE_FAILURES=0
+                continue
+            state["errors"]+=1
+            with SEARCH_LOCK:
+                SEARCH_CONSECUTIVE_FAILURES+=1
+                if SEARCH_CONSECUTIVE_FAILURES>=SEARCH_CIRCUIT_FAILURES:SEARCH_CIRCUIT_OPEN=True
             print("SEARCH_WARNING",type(exc).__name__,str(exc)[:160],flush=True)
-            if SEARCH_CONSECUTIVE_FAILURES>=SEARCH_CIRCUIT_FAILURES:
-                SEARCH_CIRCUIT_OPEN=True; state["circuit_open"]=True
-            break
+            if SEARCH_CIRCUIT_OPEN:state["circuit_open"]=True; break
+            continue
         for result in results:
             url=result.get("href") or result.get("url") or ""; title=result.get("title",""); snippet=result.get("body","")
             if url in seen or blocked_url(url) or not name_match(name,title+" "+snippet):continue
@@ -165,7 +212,7 @@ def search_web(name,category,license_number="",max_results=10,state=None):
 def fetch(url):
     if blocked_url(url): return url,""
     try:
-        r=SESSION.get(url,timeout=(5,12),allow_redirects=True)
+        r=http_session().get(url,timeout=(4,10),allow_redirects=True)
         if r.status_code==200 and "text/html" in r.headers.get("content-type","text/html") and not blocked_url(r.url): return r.url,r.text
     except requests.RequestException: pass
     return url,""
@@ -238,24 +285,29 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
     profession=category_match(category,title+" "+page_text[:5000]) or category_match(category,identity_text[:5000])
     context_profession=category_match(category,context)
     same_domain=related_domains(email_domain,host(url))
+    identity_domain_match=bool(identity_url) and related_domains(email_domain,host(identity_url))
     related_site=bool(identity_url) and related_domains(host(url),host(identity_url))
     linked_identity=bool(identity_url and url!=identity_url and inherited_identity and related_site)
     free_mail=email_domain in FREE_MAIL
     page_email_count=len({norm_email(x) for x in EMAIL_RE.findall(page_text) if valid_email(norm_email(x))})
     if not profession or not (verified_site or linked_identity):return None
     if kind=="person":
+        if forbidden_person_role(email):return None
         if free_mail:
             if not (direct_context or (title_identity and page_email_count<=2)):return None
             return 100 if direct_context else 92
-        if not same_domain and not local_name_match(email,name) and not direct_context:return None
+        # A footer/support address from another company is not the person's address,
+        # even when the doctor's name appears elsewhere on the same long page.
+        if not (same_domain or identity_domain_match):
+            if not (local_name_match(email,name) and direct_context):return None
         if large_institution(url):
-            if local in GENERIC_LOCAL:
-                if not (direct_context and context_profession):return None
+            if role_address(email):
+                if not ((direct_context and context_profession) or (url==identity_url and title_identity and context_profession and same_domain)):return None
                 return 82
             if not (direct_context or title_identity or (linked_identity and context_profession)):return None
             return 98 if direct_context else 90
-        if local in GENERIC_LOCAL:
-            if not (direct_context or title_identity or (linked_identity and page_email_count<=3)):return None
+        if role_address(email):
+            if not ((direct_context and (context_profession or title_identity)) or (linked_identity and page_email_count<=3)):return None
             return 88 if direct_context else 80
         if not (direct_context or title_identity or local_name_match(email,name) or (linked_identity and page_email_count<=3)):return None
         return 98 if direct_context else 90
@@ -264,8 +316,7 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
     return 95 if direct_context else 88
 def classify(email,category):
     if CATEGORY_CONFIG.get(category,{}).get("kind") in {"community","creator"}:return "BUSINESS_OR_COMMUNITY"
-    local=email.split("@",1)[0]
-    return "CLINIC_OR_ORGANIZATION" if local in GENERIC_LOCAL or any(part in local for part in INSTITUTION_ROLE_PARTS) else "PERSONAL_PROFESSIONAL"
+    return "CLINIC_OR_ORGANIZATION" if role_address(email) else "PERSONAL_PROFESSIONAL"
 def ranked_candidates(candidates):
     best={}
     for candidate in candidates:
@@ -297,11 +348,22 @@ def annotate_shared_contacts(expanded):
     if not result.empty:
         result["shared_target_count"]=result.groupby("email").email.transform("size")
         result["shared_contact"]=result.shared_target_count>1
+        result["send_eligible"]=[stored_candidate_still_safe(row) for row in result.to_dict("records")]
+        result["personalization_safe"]=[
+            bool(row.get("send_eligible")) and row.get("email_type")=="PERSONAL_PROFESSIONAL"
+            and int(row.get("shared_target_count",1) or 1)==1
+            and (local_name_match(str(row.get("email","")),str(row.get("name",""))) or name_match(str(row.get("name","")),str(row.get("evidence",""))))
+            for row in result.to_dict("records")
+        ]
+        result["outreach_scope"]=[
+            "PERSON" if row.get("personalization_safe") else "ORGANIZATION_OR_SHARED_ROUTE"
+            for row in result.to_dict("records")
+        ]
     return result
 def research(row):
     name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
-    if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES}:
-        return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]"}
+    if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name)):
+        return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]","last_attempt_at":datetime.now(timezone.utc).isoformat()}
     def inspect_hit(hit):
         if hit["url"] in attempts:return
         url,html=fetch(hit["url"]); attempts.append(url)
@@ -347,14 +409,88 @@ def research(row):
             if ranked_candidates(candidates) and ranked_candidates(candidates)[0][0]>=90:break
     candidates=ranked_candidates(candidates)
     if candidates:
-        score,email,source,evidence,query,method,identity_url=candidates[0]; alternates=[serialized_candidate(x) for x in candidates[1:3]]; return base|{"email":email,"email_type":classify(email,category),"confidence":score,"source_url":source,"identity_url":identity_url,"status":"VERIFIED","evidence":evidence,"matched_query":query,"extraction_method":method,"alternate_emails":json.dumps(alternates,ensure_ascii=False),"candidate_count":len(candidates),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
+        score,email,source,evidence,query,method,identity_url=candidates[0]; alternates=[serialized_candidate(x) for x in candidates[1:3]]; return base|{"email":email,"email_type":classify(email,category),"confidence":score,"source_url":source,"identity_url":identity_url,"status":"VERIFIED","evidence":evidence,"matched_query":query,"extraction_method":method,"alternate_emails":json.dumps(alternates,ensure_ascii=False),"candidate_count":len(candidates),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False),"last_attempt_at":datetime.now(timezone.utc).isoformat()}
     pending=search_state.get("circuit_open") or (search_state.get("results",0)==0 and search_state.get("errors",0)>0) or (search_state.get("results",0)>0 and search_state.get("pages_fetched",0)==0)
     retry_count=int(row.get("retry_count",0) or 0)+(1 if pending else 0)
     next_retry=(datetime.now(timezone.utc)+timedelta(hours=min(72,6*(2**min(retry_count,3))))).isoformat() if pending else ""
     status="PENDING_SEARCH_PROVIDER" if pending else "NO_VERIFIED_PUBLIC_EMAIL"
-    return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":status,"evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"retry_count":retry_count,"next_retry_at":next_retry,"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
+    return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":status,"evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"retry_count":retry_count,"next_retry_at":next_retry,"last_attempt_at":datetime.now(timezone.utc).isoformat(),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
+
+def stored_candidate_still_safe(record):
+    if str(record.get("status",""))!="VERIFIED":return False
+    name=str(record.get("name","")); category=str(record.get("category","")); email=norm_email(str(record.get("email","")))
+    source=str(record.get("source_url","")); identity=str(record.get("identity_url",source)); evidence=str(record.get("evidence",""))
+    kind=CATEGORY_CONFIG.get(category,{}).get("kind","person")
+    if not valid_email(email) or directory_site(source):return False
+    if kind=="person":
+        if not valid_person_target_name(name) or forbidden_person_role(email):return False
+        domain=email.rsplit("@",1)[1]
+        if domain not in FREE_MAIL and not (related_domains(domain,host(source)) or related_domains(domain,host(identity)) or local_name_match(email,name)):return False
+        if large_institution(source) and role_address(email) and not (name_match(name,evidence) and category_match(category,evidence)):return False
+    return True
+
+def migrate_checkpoint_row(record):
+    result=dict(record)
+    if int(result.get("algo_version",0) or 0)==ALGO_VERSION:return result
+    if int(result.get("algo_version",0) or 0)!=7:return None
+    old_status=str(result.get("status",""))
+    result["algo_version"]=ALGO_VERSION
+    if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result
+    if old_status.startswith("REVIEW_INVALID_TARGET_NAME"):return result
+    result["previous_status"]=old_status
+    if old_status=="VERIFIED":
+        result["previous_candidate"]=json.dumps({key:record.get(key,"") for key in ("email","confidence","source_url","identity_url","evidence","matched_query","extraction_method")},ensure_ascii=False)
+    result.update({"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
+    return result
+
+def round_robin_rows(rows):
+    buckets={}
+    for row in rows:buckets.setdefault(str(row.get("category","")),[]).append(row)
+    categories=sorted(buckets,key=lambda c:(CATEGORY_CONFIG.get(c,{}).get("priority","Z"),c))
+    result=[]
+    while categories:
+        remaining=[]
+        for category in categories:
+            if buckets[category]:result.append(buckets[category].pop(0))
+            if buckets[category]:remaining.append(category)
+        categories=remaining
+    return result
+
+def build_research_queue(rows,stored,now,max_targets):
+    direct,fresh,due,deferred=[],[],[],[]
+    for row in rows:
+        key=(str(row.get("name","")).strip(),str(row.get("category","")).strip()); previous=stored.get(key)
+        if previous and not str(previous.get("status","")).startswith("PENDING_"):continue
+        if not previous:
+            (direct if usable_identity_seed(str(row.get("seed_source","")).strip()) else fresh).append(row); continue
+        candidate=dict(row)|{"retry_count":previous.get("retry_count",0),"previous_search_queries":previous.get("search_queries",0),"last_attempt_at":previous.get("last_attempt_at","")}
+        # Rows never searched because the old circuit was open are genuinely untouched.
+        if int(previous.get("search_queries",0) or 0)==0:
+            due.append(candidate); continue
+        try:retry_at=datetime.fromisoformat(str(previous.get("next_retry_at","")).replace("Z","+00:00"))
+        except (ValueError,TypeError):retry_at=now
+        (due if retry_at<=now else deferred).append(candidate if retry_at<=now else (retry_at,candidate))
+    due.sort(key=lambda row:(int(row.get("retry_count",0) or 0),str(row.get("last_attempt_at",""))))
+    fresh_queue=round_robin_rows(direct)+round_robin_rows(fresh)
+    due_queue=round_robin_rows(due)
+    queue=(fresh_queue+due_queue)[:max_targets]
+    if not queue and deferred:
+        deferred.sort(key=lambda item:item[0]); queue=[row for _,row in deferred[:min(250,max_targets)]]
+    return queue
 def load_input(path):
     source=Path(path); frame=pd.read_excel(source) if source.suffix.lower()==".xlsx" else pd.read_csv(source); return frame.fillna("").to_dict("records")
+def retain_active_checkpoint(stored,rows,out):
+    active={(str(row.get("name","")).strip(),str(row.get("category","")).strip()) for row in rows}
+    retired={key:value for key,value in stored.items() if key not in active}
+    if retired:
+        archive=out/"retired_targets.jsonl"; archived={}
+        if archive.exists():
+            for line in archive.read_text(encoding="utf-8",errors="ignore").splitlines():
+                try:item=json.loads(line); archived[(item.get("name",""),item.get("category",""))]=item
+                except Exception:pass
+        for key,value in retired.items():archived[key]=dict(value)|{"retired_at":datetime.now(timezone.utc).isoformat()}
+        archive.write_text("".join(json.dumps(row,ensure_ascii=False)+"\n" for row in archived.values()),encoding="utf-8")
+    return {key:value for key,value in stored.items() if key in active}
 def excel_safe_frame(frame):
     safe=frame.copy()
     for col in safe.columns:
@@ -364,44 +500,41 @@ def main():
     parser=argparse.ArgumentParser(); parser.add_argument("input"); parser.add_argument("--out",default="output"); parser.add_argument("--resume",action="store_true"); parser.add_argument("--export-only",action="store_true"); parser.add_argument("--max-targets",type=int,default=int(os.getenv("MAX_TARGETS_PER_RUN","10000"))); args=parser.parse_args(); out=Path(args.out); out.mkdir(parents=True,exist_ok=True); checkpoint=out/"checkpoint.jsonl"; stored={}
     if args.resume and checkpoint.exists():
         for line in checkpoint.read_text(encoding="utf-8",errors="ignore").splitlines():
-            try: result=json.loads(line)
+            try: result=migrate_checkpoint_row(json.loads(line))
             except Exception: continue
-            if result.get("algo_version")==ALGO_VERSION: stored[(result.get("name",""),result.get("category",""))]=result
-    rows=load_input(args.input); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in stored.values()),encoding="utf-8")
+            if result and result.get("algo_version")==ALGO_VERSION: stored[(result.get("name",""),result.get("category",""))]=result
+    rows=load_input(args.input); stored=retain_active_checkpoint(stored,rows,out); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in stored.values()),encoding="utf-8")
     if not args.export_only:
         with checkpoint.open("a",encoding="utf-8") as stream:
-            direct=[]; fresh=[]; retry=[]; deferred=[]; now=datetime.now(timezone.utc)
-            for row in rows:
-                key=(str(row.get("name","")).strip(),str(row.get("category","")).strip())
-                previous=stored.get(key)
-                if previous and not str(previous.get("status","")).startswith("PENDING_"):continue
-                if previous:
-                    candidate=dict(row)|{"retry_count":previous.get("retry_count",0)}
-                    try:
-                        retry_at=datetime.fromisoformat(str(previous.get("next_retry_at","")).replace("Z","+00:00"))
-                        due=retry_at<=now
-                    except (ValueError,TypeError):
-                        retry_at=now; due=True
-                    if due:retry.append(candidate)
-                    else:deferred.append((retry_at,candidate))
-                elif usable_identity_seed(str(row.get("seed_source","")).strip()):direct.append(row)
-                else:fresh.append(row)
-            if not (direct or fresh or retry) and deferred:
-                deferred.sort(key=lambda item:item[0])
-                probe_count=min(250,args.max_targets,len(deferred))
-                retry=[row for _,row in deferred[:probe_count]]
-                print(f"No retries due; probing {probe_count} deferred targets to verify provider recovery",flush=True)
-            queue=(direct+fresh+retry)[:args.max_targets]
-            for index,row in enumerate(queue,1):
-                if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:
-                    print(f"Stopping shift safely at provider/search limit after {index-1} targets and {SEARCH_CALLS} search calls",flush=True)
-                    break
-                key=(str(row.get("name","")).strip(),str(row.get("category","")).strip())
-                print(f"[{index}/{len(queue)}] {key[0]} | {key[1]}",flush=True); result=research(row); stored[key]=result; stream.write(json.dumps(result,ensure_ascii=False)+"\n"); stream.flush()
+            queue=build_research_queue(rows,stored,datetime.now(timezone.utc),args.max_targets)
+            print(f"Research queue={len(queue)} workers={RESEARCH_WORKERS} search_limit={SEARCH_CALL_LIMIT} backends={SEARCH_BACKENDS}",flush=True)
+            row_iter=iter(enumerate(queue,1)); in_flight={}
+            with concurrent.futures.ThreadPoolExecutor(max_workers=RESEARCH_WORKERS) as pool:
+                def submit_next():
+                    if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:return False
+                    try:index,row=next(row_iter)
+                    except StopIteration:return False
+                    key=(str(row.get("name","")).strip(),str(row.get("category","")).strip())
+                    print(f"[{index}/{len(queue)}] {key[0]} | {key[1]}",flush=True)
+                    in_flight[pool.submit(research,row)]=(key,index); return True
+                for _ in range(RESEARCH_WORKERS):
+                    if not submit_next():break
+                while in_flight:
+                    done,_=concurrent.futures.wait(in_flight,return_when=concurrent.futures.FIRST_COMPLETED)
+                    for future in done:
+                        key,index=in_flight.pop(future)
+                        try:result=future.result()
+                        except Exception as exc:
+                            print(f"TARGET_WARNING {key[0]} {type(exc).__name__}: {str(exc)[:160]}",flush=True)
+                            continue
+                        stored[key]=result; stream.write(json.dumps(result,ensure_ascii=False)+"\n"); stream.flush()
+                        submit_next()
+            if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:
+                print(f"Stopping shift safely after {len(queue)-len(list(row_iter))} scheduled targets and {SEARCH_CALLS} search calls",flush=True)
     frame=pd.DataFrame(list(stored.values()))
     if frame.empty:return
     frame=frame.sort_values(["priority","status","confidence"],ascending=[True,True,False]).drop_duplicates(subset=["name","category"],keep="first"); expanded=annotate_shared_contacts(expand_verified_contacts(frame))
     frame.to_csv(out/"audit.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(frame).to_excel(out/"audit.xlsx",index=False)
-    found=expanded.sort_values(["priority","confidence"],ascending=[True,False]).drop_duplicates(subset=["email"],keep="first") if not expanded.empty else pd.DataFrame(columns=list(frame.columns)+["candidate_rank"]); found.to_csv(out/"contacts.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(found).to_excel(out/"contacts.xlsx",index=False); excel_safe_frame(frame[frame.status.str.startswith("REVIEW")]).to_excel(out/"review.xlsx",index=False)
-    summary={"algo_version":ALGO_VERSION,"touched_targets":len(frame),"resolved_targets":int((~frame.status.str.startswith("PENDING")).sum()),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"pending":int(frame.status.str.startswith("PENDING").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"search_calls":SEARCH_CALLS,"search_circuit_open":SEARCH_CIRCUIT_OPEN,"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
+    found=expanded[expanded.send_eligible].sort_values(["priority","confidence"],ascending=[True,False]).drop_duplicates(subset=["email"],keep="first") if not expanded.empty else pd.DataFrame(columns=list(frame.columns)+["candidate_rank"]); found.to_csv(out/"contacts.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(found).to_excel(out/"contacts.xlsx",index=False); excel_safe_frame(frame[frame.status.str.startswith("REVIEW")]).to_excel(out/"review.xlsx",index=False)
+    summary={"algo_version":ALGO_VERSION,"touched_targets":len(frame),"resolved_targets":int((~frame.status.str.startswith("PENDING")).sum()),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"pending":int(frame.status.str.startswith("PENDING").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"personalization_safe_emails":int(found.personalization_safe.sum()) if not found.empty else 0,"search_calls":SEARCH_CALLS,"search_circuit_open":SEARCH_CIRCUIT_OPEN,"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
 if __name__=="__main__": main()

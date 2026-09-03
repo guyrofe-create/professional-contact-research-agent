@@ -1,5 +1,8 @@
 import unittest
 import json
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
 import pandas as pd
 from unittest.mock import MagicMock, patch
 
@@ -177,6 +180,74 @@ class IdentityValidationTests(unittest.TestCase):
         finally:
             agent.SEARCH_CALLS, agent.SEARCH_CONSECUTIVE_FAILURES, agent.SEARCH_CIRCUIT_OPEN, agent.SEARCH_CIRCUIT_FAILURES = old
 
+    def test_no_results_is_not_a_provider_outage(self):
+        old = (agent.SEARCH_CALLS, agent.SEARCH_CONSECUTIVE_FAILURES, agent.SEARCH_CIRCUIT_OPEN)
+        try:
+            agent.SEARCH_CALLS = 0
+            agent.SEARCH_CONSECUTIVE_FAILURES = 0
+            agent.SEARCH_CIRCUIT_OPEN = False
+            with patch.object(agent, "_search_once", side_effect=RuntimeError("No results found.")) as search:
+                state = {}
+                self.assertEqual([], list(agent.search_web("דוד כהן", "gynecologist", state=state)))
+            self.assertEqual(2, search.call_count)
+            self.assertEqual(0, state["errors"])
+            self.assertFalse(agent.SEARCH_CIRCUIT_OPEN)
+        finally:
+            agent.SEARCH_CALLS, agent.SEARCH_CONSECUTIVE_FAILURES, agent.SEARCH_CIRCUIT_OPEN = old
+
+    def test_person_is_not_assigned_sales_or_international_route(self):
+        for email in ("sales@miok.co.il", "international@raphaelhospitals.co.il", "logistics@hospital.org.il"):
+            with self.subTest(email=email):
+                score = agent.candidate_score(
+                    email, "https://hospital.org.il/doctors/dr-cohen", "דוד כהן רופא נשים",
+                    "דוד כהן רופא נשים", f"דוד כהן רופא נשים {email}", "דוד כהן",
+                    "gynecologist", True, "דוד כהן רופא נשים", "https://hospital.org.il/doctors/dr-cohen",
+                )
+                self.assertIsNone(score)
+
+    def test_cross_company_footer_email_is_rejected(self):
+        score = agent.candidate_score(
+            "info2@medica.co.il", "https://raphaelhospitals.co.il/doctors/dr-cohen",
+            "דוד כהן רופא נשים info2@medica.co.il", "דוד כהן רופא נשים",
+            "דוד כהן info2@medica.co.il", "דוד כהן", "gynecologist", True,
+            "דוד כהן רופא נשים", "https://raphaelhospitals.co.il/doctors/dr-cohen",
+        )
+        self.assertIsNone(score)
+
+    def test_version_seven_checkpoint_is_migrated_without_losing_candidate(self):
+        old = {
+            "algo_version": 7, "name": "דוד כהן", "category": "gynecologist",
+            "status": "VERIFIED", "email": "sales@miok.co.il", "confidence": 90,
+            "source_url": "https://miok.co.il/doctors/123", "identity_url": "https://miok.co.il/doctors/123",
+            "evidence": "דוד כהן רופא נשים sales@miok.co.il",
+        }
+        migrated = agent.migrate_checkpoint_row(old)
+        self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
+        self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
+        self.assertIn("sales@miok.co.il", migrated["previous_candidate"])
+
+    def test_queue_immediately_processes_never_searched_rows_and_round_robins_categories(self):
+        rows = [
+            {"name": "אחד כהן", "category": "gynecologist"},
+            {"name": "שניים כהן", "category": "gynecologist"},
+            {"name": "שלוש לוי", "category": "family_doctor"},
+        ]
+        future = "2099-01-01T00:00:00+00:00"
+        stored = {(row["name"], row["category"]): {"status": "PENDING_SEARCH_PROVIDER", "search_queries": 0, "next_retry_at": future} for row in rows}
+        queue = agent.build_research_queue(rows, stored, datetime.now(timezone.utc), 10)
+        self.assertEqual(3, len(queue))
+        self.assertEqual({"gynecologist", "family_doctor"}, {queue[0]["category"], queue[1]["category"]})
+
+    def test_removed_targets_are_archived_not_counted_as_active(self):
+        stored = {
+            ("דוד כהן", "gynecologist"): {"name": "דוד כהן", "category": "gynecologist", "status": "VERIFIED"},
+            ("ועידת רפואה", "family_doctor"): {"name": "ועידת רפואה", "category": "family_doctor", "status": "VERIFIED"},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            active = agent.retain_active_checkpoint(stored, [{"name": "דוד כהן", "category": "gynecologist"}], Path(directory))
+            self.assertEqual([("דוד כהן", "gynecologist")], list(active))
+            self.assertIn("ועידת רפואה", (Path(directory) / "retired_targets.jsonl").read_text(encoding="utf-8"))
+
     def test_placeholder_and_non_outreach_emails_are_rejected(self):
         for email in ("dr@example.com", "john.doe@company.com", "mymail@mailservice.com", "rfu-refunds@tlvmc.gov.il", "zimun@tlvmc.gov.il"):
             with self.subTest(email=email):
@@ -285,6 +356,12 @@ class IdentityValidationTests(unittest.TestCase):
         rows = []
         seed_targets.add(rows, "אודות", "lactation", "https://example.org/about")
         seed_targets.add(rows, "דף הבית", "parenting_center", "https://example.org/")
+        self.assertEqual([], rows)
+
+    def test_generic_web_pages_are_not_person_targets(self):
+        rows = []
+        seed_targets.add(rows, "ועידת ישראל לרפואת משפחה 2024", "family_doctor", "https://example.org/conf", "web")
+        seed_targets.add(rows, "רופא משפחה. יומן", "family_doctor", "https://example.org/book", "web")
         self.assertEqual([], rows)
 
 

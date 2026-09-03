@@ -17,7 +17,7 @@ concurrency:
 jobs:
   research:
     runs-on: ubuntu-latest
-    timeout-minutes: 210
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,7 +33,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=7
+          VERSION=8
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
@@ -64,13 +64,15 @@ jobs:
       - name: Run resumable verified research shift
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          SEARCH_CALL_LIMIT: 250
-          SEARCH_CIRCUIT_FAILURES: 4
+          SEARCH_CALL_LIMIT: 12000
+          SEARCH_CIRCUIT_FAILURES: 20
+          SEARCH_BACKENDS: bing,brave,duckduckgo
+          RESEARCH_WORKERS: 4
           MAX_TARGETS_PER_RUN: 10000
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: |
           mkdir -p output
-          timeout 165m python agent.py targets.csv --out output --resume || test $? -eq 124
+          timeout 330m python agent.py targets.csv --out output --resume || test $? -eq 124
       - name: Write completion state
         if: always()
         run: |
@@ -79,7 +81,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import csv,json
-          VERSION=7
+          VERSION=8
           with open('targets.csv',encoding='utf-8-sig') as f:
               targets=sum(1 for _ in csv.DictReader(f))
           latest={}; cp=Path('output/checkpoint.jsonl')

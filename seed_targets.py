@@ -26,6 +26,12 @@ EXCLUDED_CATEGORIES = {"instagram_creator"}
 INVALID_ENTITY_NAMES = {
     "ראשי", "אודות", "אודותינו", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית",
 }
+GENERIC_PERSON_TARGET_PHRASES = {
+    "ועידה", "ועידת", "כנס", "רופאים פרטיים", "רופא משפחה פרטי", "יומן", "מאמר", "כתבה",
+    "טיפול", "טיפולים", "פיזיותרפיה", "דיכאון", "פלטפורמת", "רשימה של", "יחידות",
+    "הרשמה וקבלה", "קניה ומכירה", "אודות אתר", "בלוג", "מדריך", "מרכז רפואי",
+    "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
+}
 PERSON_CATEGORIES = {
     "gynecologist", "family_doctor", "clinic_manager", "fertility_doctor", "embryologist",
     "fertility_nurse", "fertility_consultant", "doula", "midwife", "childbirth_educator",
@@ -88,9 +94,19 @@ def person_identity_key(name, category):
     return " ".join(sorted(words)) if category in PERSON_CATEGORIES else " ".join(words)
 
 
+def valid_person_target(name, category, source_type=""):
+    if category not in PERSON_CATEGORIES:
+        return True
+    value=clean_name(name).lower()
+    if any(phrase in value for phrase in GENERIC_PERSON_TARGET_PHRASES):
+        return False
+    words=[word for word in re.split(r"[^\w\u0590-\u05ff]+",value) if len(word)>=2 and word not in {"דר","דוקטור","פרופ","פרופסור"}]
+    return 2<=len(words)<=6 and not any(word.isdigit() for word in words) and not any(char in value for char in ("?","!","@"))
+
+
 def add(rows, name, category, source="", source_type="discovery", **metadata):
     name = clean_name(name)
-    if category not in EXCLUDED_CATEGORIES and name not in INVALID_ENTITY_NAMES and 3 <= len(name) <= 160:
+    if category not in EXCLUDED_CATEGORIES and name not in INVALID_ENTITY_NAMES and 3 <= len(name) <= 160 and valid_person_target(name,category,source_type):
         rows.append({"name": name, "category": category, "seed_source": source, "seed_type": source_type} | metadata)
 
 
@@ -231,7 +247,7 @@ def web_discovery(rows):
             expanded_queries += [f"{query} {region}" for query in queries for region in REGIONS]
         for query in expanded_queries:
             try:
-                for result in engine.text(query, region="il-he", safesearch="moderate", max_results=30) or []:
+                for result in engine.text(query, region="il-he", safesearch="moderate", max_results=30, backend="bing,brave,duckduckgo") or []:
                     source = result.get("href") or result.get("url") or ""
                     if any(bad in urlparse(source).netloc.lower() for bad in BLOCKED):
                         continue
@@ -239,7 +255,8 @@ def web_discovery(rows):
                     if title:
                         add(rows, title, category, source, "web")
             except Exception as exc:
-                errors.append(type(exc).__name__ + ": " + str(exc)[:120])
+                if "No results found" not in str(exc):
+                    errors.append(type(exc).__name__ + ": " + str(exc)[:120])
             time.sleep(0.25)
         stats[category] = {"added_raw": len(rows) - before, "errors": errors}
     return stats
@@ -275,6 +292,9 @@ def main():
             ~prior_frame.category.isin(EXCLUDED_CATEGORIES)
             & ~prior_frame.name.map(clean_name).isin(INVALID_ENTITY_NAMES)
         ].copy()
+        comparable = comparable[
+            [valid_person_target(name,category,seed_type) for name,category,seed_type in zip(comparable.name,comparable.category,comparable.seed_type)]
+        ]
         comparable["identity_key"] = [person_identity_key(name, category) for name, category in zip(comparable.name, comparable.category)]
         expected_previous = len(comparable.drop_duplicates(subset=["identity_key", "category"]))
     if len(frame) < expected_previous:

@@ -77,7 +77,7 @@ def main():
     safe_frame.to_csv(OUT / 'audit.csv', index=False, encoding='utf-8-sig')
     safe_frame.to_excel(OUT / 'audit.xlsx', index=False)
 
-    found = expanded.copy() if not expanded.empty else pd.DataFrame(columns=list(frame.columns) + ['candidate_rank'])
+    found = expanded[expanded.send_eligible].copy() if not expanded.empty else pd.DataFrame(columns=list(frame.columns) + ['candidate_rank'])
     found = found.sort_values(['priority', 'confidence'], ascending=[True, False]).drop_duplicates(subset=['email'], keep='first')
     safe_found = sanitize_frame(found)
     safe_found.to_csv(OUT / 'contacts.csv', index=False, encoding='utf-8-sig')
@@ -97,6 +97,8 @@ def main():
         'pending': int(frame.status.str.startswith('PENDING').sum()),
         'review': int(frame.status.str.startswith('REVIEW').sum()),
         'unique_emails': int(found.email.nunique()),
+        'personalization_safe_emails': int(found.personalization_safe.sum()) if not found.empty else 0,
+        'organization_or_shared_routes': int((found.outreach_scope == 'ORGANIZATION_OR_SHARED_ROUTE').sum()) if not found.empty else 0,
         'direct_emails': int(found.extraction_method.fillna('').str.startswith(('direct_', 'official_')).sum()) if not found.empty else 0,
         'institutional_emails': int((found.email_type == 'CLINIC_OR_ORGANIZATION').sum()) if not found.empty else 0,
         'by_category': frame.groupby('category').status.value_counts().unstack(fill_value=0).to_dict('index'),
