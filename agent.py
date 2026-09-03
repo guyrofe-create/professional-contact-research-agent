@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 9
+ALGO_VERSION = 10
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -37,7 +37,7 @@ NON_OUTREACH_LOCAL_EXACT = {"zimun", "appointments", "torim", "webmaster"}
 GENERIC_LOCAL = {"info", "office", "clinic", "contact", "mail", "reception", "admin", "secretary", "nashim", "service", "hello", "igudyhanaka", "customerservice", "visitors", "1800", "general", "center", "centre"}
 INSTITUTION_ROLE_PARTS = ("clinic", "unit", "ivf", "nashim", "dept", "department", "office", "secretary", "reception", "center", "centre", "admin")
 FREE_MAIL = {"gmail.com", "walla.co.il", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "bezeqint.net", "012.net.il", "netvision.net.il"}
-BLOCKED_DOMAINS = {"google.com", "youtube.com", "wikipedia.org", "wiktionary.org", "linkedin.com", "twitter.com", "rocketreach.co", "zoominfo.com", "prospeo.io", "hunter.io", "apollo.io", "stockanalysis.com", "yahoo.com", "investing.com", "pinterest.com", "mako.co.il", "ynet.co.il", "maariv.co.il", "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br", "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com", "asli.org.il", "choosingwisely.org.il", "doctorsonly.co.il"}
+BLOCKED_DOMAINS = {"google.com", "youtube.com", "wikipedia.org", "wiktionary.org", "linkedin.com", "twitter.com", "rocketreach.co", "zoominfo.com", "prospeo.io", "hunter.io", "apollo.io", "stockanalysis.com", "yahoo.com", "investing.com", "pinterest.com", "mako.co.il", "ynet.co.il", "maariv.co.il", "haaretz.co.il", "israelhayom.co.il", "ice.co.il", "globes.co.il", "themarker.com", "jusbrasil.com.br", "ubereats.com", "ilovepdf.com", "smallpdf.com", "drugs.com", "amazon.com", "reddit.com", "asli.org.il", "choosingwisely.org.il", "doctorsonly.co.il", "get-marketing.co.il"}
 TRUSTED_REGISTRIES = {"ima.org.il", "practitioners.health.gov.il", "gov.il", "doctors.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "maccabi4u.co.il", "clalit.co.il", "meuhedet.co.il", "leumit.co.il", "sheba.co.il", "tasmc.org.il", "hadassah.org.il", "rambam.org.il", "assuta.co.il", "hospitals.clalit.co.il", "ialp.org.il", "midwives.org.il"}
 GENERAL_CONTENT_PATHS = ("/article", "/articles", "/blog", "/news", "/magazine", "/forum", "/forums", "/podcast", "/כתבות", "/מאמר", "/חדשות", "/פורום")
 DIRECTORY_DOMAINS = ("doctors.co.il", "doctorim.co.il", "infomed.co.il", "medreviews.co.il", "doctorita.co.il", "docadvisor.co.il", "medico.co.il", "beok.co.il", "medpage.co.il", "ima.org.il", "miok.co.il", "bikurofe.co.il", "d.co.il", "easy.co.il", "freeindex.co.il", "doctorindex.co.il", "zap.co.il", "forty.co.il", "prog.co.il", "b144.co.il", "israelbusinessguide.com")
@@ -66,7 +66,7 @@ CATEGORY_CONFIG = {
     "womens_health_center": {"priority": "A", "terms": ["מרכז בריאות האישה", "מרפאת נשים", "בריאות האישה", "women health"], "kind": "org"},
     "community_clinic": {"priority": "B", "terms": ["מרפאה קהילתית", "מרפאת משפחה", "מרכז רפואי", "רפואה ראשונית"], "kind": "org"},
     "fertility_doctor": {"priority": "A", "terms": ["פוריות", "פריון", "ivf", "שימור פוריות"], "kind": "person"}, "ivf_unit": {"priority": "A", "terms": ["ivf", "הפריה חוץ גופית", "יחידת פוריות"], "kind": "org"}, "fertility_center": {"priority": "A", "terms": ["מרכז פוריות", "מרפאת פוריות", "פריון"], "kind": "org"}, "embryologist": {"priority": "A", "terms": ["אמבריולוג", "embryologist", "ivf"], "kind": "person"}, "fertility_nurse": {"priority": "A", "terms": ["אחות פוריות", "אחות פריון", "ivf"], "kind": "person"}, "fertility_consultant": {"priority": "A", "terms": ["יועצת פוריות", "יועץ פוריות", "פריון"], "kind": "person"}, "sperm_bank": {"priority": "A", "terms": ["בנק זרע", "תרומת זרע"], "kind": "org"}, "fertility_preservation": {"priority": "A", "terms": ["שימור פוריות"], "kind": "org"}, "fertility_association": {"priority": "A", "terms": ["עמותת פוריות", "ארגון פוריות", "פריון"], "kind": "org"}, "doula": {"priority": "A", "terms": ["דולה", "doula", "תומכת לידה"], "kind": "person"}, "midwife": {"priority": "A", "terms": ["מיילדת", "midwife"], "kind": "person"}, "childbirth_educator": {"priority": "A", "terms": ["הכנה ללידה", "מדריכת לידה"], "kind": "person"}, "birth_center": {"priority": "A", "terms": ["מרכז לידה", "חדר לידה", "יולדות"], "kind": "org"}, "lactation": {"priority": "B", "terms": ["יועצת הנקה", "ibclc", "הנקה"], "kind": "person"}, "pelvic_floor": {"priority": "B", "terms": ["רצפת אגן", "פיזיותרפיה"], "kind": "person"}, "sleep_consultant": {"priority": "B", "terms": ["יועצת שינה", "ייעוץ שינה"], "kind": "person"}, "pregnancy_dietitian": {"priority": "B", "terms": ["דיאטנית", "תזונה", "הריון", "פוריות"], "kind": "person"}, "parenting_center": {"priority": "B", "terms": ["מרכז הורות", "הורים ותינוקות"], "kind": "org"}, "perinatal_mental_health": {"priority": "B", "terms": ["פסיכולוג", "טיפול רגשי", "הריון", "פוריות"], "kind": "person"}, "facebook_group_admin": {"priority": "C", "terms": ["קבוצת פייסבוק", "הריון", "פוריות"], "kind": "community"}, "community_manager": {"priority": "C", "terms": ["קהילה", "הריון", "פוריות"], "kind": "community"}, "parenting_site": {"priority": "C", "terms": ["הורות", "הריון", "לידה"], "kind": "org"}, "pregnancy_podcast": {"priority": "C", "terms": ["פודקאסט", "הריון", "פוריות"], "kind": "creator"}, "doula_school": {"priority": "C", "terms": ["בית ספר לדולות", "קורס דולות"], "kind": "org"}, "childbirth_school": {"priority": "C", "terms": ["הכנה ללידה", "קורס מדריכות"], "kind": "org"}, "women_health_creator": {"priority": "C", "terms": ["בריאות האישה", "הריון", "לידה"], "kind": "creator"}}
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/9.0; public-contact-research)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/10.0; public-contact-research)"}
 SEARCH_CALL_LIMIT = int(os.getenv("SEARCH_CALL_LIMIT", "12000"))
 SEARCH_CIRCUIT_FAILURES = int(os.getenv("SEARCH_CIRCUIT_FAILURES", "20"))
 SEARCH_BACKENDS = os.getenv("SEARCH_BACKENDS", "bing,brave").strip()
@@ -430,7 +430,7 @@ def stored_candidate_still_safe(record):
     name=str(record.get("name","")); category=str(record.get("category","")); email=norm_email(str(record.get("email","")))
     source=str(record.get("source_url","")); identity=str(record.get("identity_url",source)); evidence=str(record.get("evidence",""))
     kind=CATEGORY_CONFIG.get(category,{}).get("kind","person")
-    if not valid_email(email) or directory_site(source):return False
+    if not valid_email(email) or directory_site(source) or blocked_url(source) or (identity and blocked_url(identity)):return False
     if kind=="person":
         if not valid_person_target_name(name,category) or forbidden_person_role(email):return False
         domain=email.rsplit("@",1)[1]
@@ -442,12 +442,12 @@ def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:return result
     source_version=int(result.get("algo_version",0) or 0)
-    if source_version not in {7,8}:return None
+    if source_version not in {7,8,9}:return None
     old_status=str(result.get("status",""))
     result["algo_version"]=ALGO_VERSION
     if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result
     if old_status.startswith("REVIEW_INVALID_TARGET_NAME"):return result
-    if source_version==8 and old_status!="VERIFIED":return result
+    if source_version in {8,9} and old_status!="VERIFIED":return result
     result["previous_status"]=old_status
     if old_status=="VERIFIED":
         result["previous_candidate"]=json.dumps({key:record.get(key,"") for key in ("email","confidence","source_url","identity_url","evidence","matched_query","extraction_method")},ensure_ascii=False)

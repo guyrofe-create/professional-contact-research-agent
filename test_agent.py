@@ -232,6 +232,11 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
         self.assertEqual("NO_VERIFIED_PUBLIC_EMAIL", migrated["status"])
 
+    def test_marketing_agency_contact_is_not_attributed_to_a_person(self):
+        old = {"algo_version": 9, "name": "אורנית טפירו ישראל", "category": "doula", "status": "VERIFIED", "email": "office@get-marketing.co.il", "source_url": "https://get-marketing.co.il/#contact", "identity_url": "https://get-marketing.co.il/oranit-dula/"}
+        migrated = agent.migrate_checkpoint_row(old)
+        self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
+
     def test_generic_medical_page_is_not_a_person(self):
         self.assertFalse(agent.valid_person_target_name("IVF הפריה חוץ גופית", "embryologist"))
         self.assertFalse(agent.valid_person_target_name("לידה כמסע", "childbirth_educator"))

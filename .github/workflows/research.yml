@@ -33,7 +33,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=9
+          VERSION=10
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
@@ -81,7 +81,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import csv,json
-          VERSION=9
+          VERSION=10
           with open('targets.csv',encoding='utf-8-sig') as f:
               targets=sum(1 for _ in csv.DictReader(f))
           latest={}; cp=Path('output/checkpoint.jsonl')
