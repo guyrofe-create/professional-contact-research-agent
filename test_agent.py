@@ -226,6 +226,16 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
         self.assertIn("sales@miok.co.il", migrated["previous_candidate"])
 
+    def test_version_eight_terminal_result_is_preserved(self):
+        old = {"algo_version": 8, "name": "דוד כהן", "category": "gynecologist", "status": "NO_VERIFIED_PUBLIC_EMAIL"}
+        migrated = agent.migrate_checkpoint_row(old)
+        self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
+        self.assertEqual("NO_VERIFIED_PUBLIC_EMAIL", migrated["status"])
+
+    def test_generic_medical_page_is_not_a_person(self):
+        self.assertFalse(agent.valid_person_target_name("IVF הפריה חוץ גופית", "embryologist"))
+        self.assertFalse(agent.valid_person_target_name("לידה כמסע", "childbirth_educator"))
+
     def test_queue_immediately_processes_never_searched_rows_and_round_robins_categories(self):
         rows = [
             {"name": "אחד כהן", "category": "gynecologist"},
@@ -362,6 +372,7 @@ class IdentityValidationTests(unittest.TestCase):
         rows = []
         seed_targets.add(rows, "ועידת ישראל לרפואת משפחה 2024", "family_doctor", "https://example.org/conf", "web")
         seed_targets.add(rows, "רופא משפחה. יומן", "family_doctor", "https://example.org/book", "web")
+        seed_targets.add(rows, "IVF הפריה חוץ גופית", "embryologist", "https://example.org/ivf", "web")
         self.assertEqual([], rows)
 
 

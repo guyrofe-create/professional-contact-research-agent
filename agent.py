@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 8
+ALGO_VERSION = 9
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -66,10 +66,10 @@ CATEGORY_CONFIG = {
     "womens_health_center": {"priority": "A", "terms": ["מרכז בריאות האישה", "מרפאת נשים", "בריאות האישה", "women health"], "kind": "org"},
     "community_clinic": {"priority": "B", "terms": ["מרפאה קהילתית", "מרפאת משפחה", "מרכז רפואי", "רפואה ראשונית"], "kind": "org"},
     "fertility_doctor": {"priority": "A", "terms": ["פוריות", "פריון", "ivf", "שימור פוריות"], "kind": "person"}, "ivf_unit": {"priority": "A", "terms": ["ivf", "הפריה חוץ גופית", "יחידת פוריות"], "kind": "org"}, "fertility_center": {"priority": "A", "terms": ["מרכז פוריות", "מרפאת פוריות", "פריון"], "kind": "org"}, "embryologist": {"priority": "A", "terms": ["אמבריולוג", "embryologist", "ivf"], "kind": "person"}, "fertility_nurse": {"priority": "A", "terms": ["אחות פוריות", "אחות פריון", "ivf"], "kind": "person"}, "fertility_consultant": {"priority": "A", "terms": ["יועצת פוריות", "יועץ פוריות", "פריון"], "kind": "person"}, "sperm_bank": {"priority": "A", "terms": ["בנק זרע", "תרומת זרע"], "kind": "org"}, "fertility_preservation": {"priority": "A", "terms": ["שימור פוריות"], "kind": "org"}, "fertility_association": {"priority": "A", "terms": ["עמותת פוריות", "ארגון פוריות", "פריון"], "kind": "org"}, "doula": {"priority": "A", "terms": ["דולה", "doula", "תומכת לידה"], "kind": "person"}, "midwife": {"priority": "A", "terms": ["מיילדת", "midwife"], "kind": "person"}, "childbirth_educator": {"priority": "A", "terms": ["הכנה ללידה", "מדריכת לידה"], "kind": "person"}, "birth_center": {"priority": "A", "terms": ["מרכז לידה", "חדר לידה", "יולדות"], "kind": "org"}, "lactation": {"priority": "B", "terms": ["יועצת הנקה", "ibclc", "הנקה"], "kind": "person"}, "pelvic_floor": {"priority": "B", "terms": ["רצפת אגן", "פיזיותרפיה"], "kind": "person"}, "sleep_consultant": {"priority": "B", "terms": ["יועצת שינה", "ייעוץ שינה"], "kind": "person"}, "pregnancy_dietitian": {"priority": "B", "terms": ["דיאטנית", "תזונה", "הריון", "פוריות"], "kind": "person"}, "parenting_center": {"priority": "B", "terms": ["מרכז הורות", "הורים ותינוקות"], "kind": "org"}, "perinatal_mental_health": {"priority": "B", "terms": ["פסיכולוג", "טיפול רגשי", "הריון", "פוריות"], "kind": "person"}, "facebook_group_admin": {"priority": "C", "terms": ["קבוצת פייסבוק", "הריון", "פוריות"], "kind": "community"}, "community_manager": {"priority": "C", "terms": ["קהילה", "הריון", "פוריות"], "kind": "community"}, "parenting_site": {"priority": "C", "terms": ["הורות", "הריון", "לידה"], "kind": "org"}, "pregnancy_podcast": {"priority": "C", "terms": ["פודקאסט", "הריון", "פוריות"], "kind": "creator"}, "doula_school": {"priority": "C", "terms": ["בית ספר לדולות", "קורס דולות"], "kind": "org"}, "childbirth_school": {"priority": "C", "terms": ["הכנה ללידה", "קורס מדריכות"], "kind": "org"}, "women_health_creator": {"priority": "C", "terms": ["בריאות האישה", "הריון", "לידה"], "kind": "creator"}}
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/8.0; public-contact-research)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/9.0; public-contact-research)"}
 SEARCH_CALL_LIMIT = int(os.getenv("SEARCH_CALL_LIMIT", "12000"))
 SEARCH_CIRCUIT_FAILURES = int(os.getenv("SEARCH_CIRCUIT_FAILURES", "20"))
-SEARCH_BACKENDS = os.getenv("SEARCH_BACKENDS", "bing,brave,duckduckgo").strip()
+SEARCH_BACKENDS = os.getenv("SEARCH_BACKENDS", "bing,brave").strip()
 RESEARCH_WORKERS = max(1, int(os.getenv("RESEARCH_WORKERS", "4")))
 SEARCH_CALLS = 0
 SEARCH_CONSECUTIVE_FAILURES = 0
@@ -86,6 +86,14 @@ GENERIC_PERSON_TARGET_PHRASES = {
     "טיפול", "טיפולים", "פיזיותרפיה", "דיכאון", "פלטפורמת", "רשימה של", "יחידות",
     "הרשמה וקבלה", "קניה ומכירה", "אודות אתר", "בלוג", "מדריך", "מרכז רפואי",
     "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
+}
+NON_NAME_TOKENS = {
+    "ivf", "vbac", "israel", "ישראל", "אתר", "קורס", "קורסי", "לידה", "לידות",
+    "הריון", "הנקה", "פוריות", "פריון", "הפריה", "גופית", "אמבריולוגיה", "אמבריולוג",
+    "דולה", "דולות", "מיילדת", "מיילדות", "יועצת", "יועץ", "אחות", "פיזיותרפיה",
+    "רצפת", "אגן", "רופא", "רופאת", "רופאים", "רפואה", "רפואי", "משפחה",
+    "מרכז", "מרכזי", "יחידה", "יחידות", "מכון", "מרפאה", "מרפאת", "בית", "ספר",
+    "pelvic", "floor", "doula", "midwife", "clinic", "center", "centre",
 }
 
 
@@ -151,11 +159,12 @@ def role_address(email):
     local=normalized_local(email)
     return local in GENERIC_LOCAL or any(part in local for part in INSTITUTION_ROLE_PARTS) or local in PERSON_ROLE_REJECT
 def forbidden_person_role(email): return normalized_local(email) in PERSON_ROLE_REJECT
-def valid_person_target_name(name):
+def valid_person_target_name(name,category=""):
     value=norm(name)
     if not value or any(norm(phrase) in value for phrase in GENERIC_PERSON_TARGET_PHRASES):return False
     words=tokens(name)
-    return 2<=len(words)<=6 and not any(word.isdigit() for word in words) and not any(char in str(name) for char in ("?", "!", "@"))
+    plausible=[word for word in words if word not in NON_NAME_TOKENS]
+    return 2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in str(name) for char in ("?", "!", "@"))
 def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
     search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
@@ -351,7 +360,7 @@ def annotate_shared_contacts(expanded):
         result["send_eligible"]=[stored_candidate_still_safe(row) for row in result.to_dict("records")]
         result["personalization_safe"]=[
             bool(row.get("send_eligible")) and row.get("email_type")=="PERSONAL_PROFESSIONAL"
-            and int(row.get("shared_target_count",1) or 1)==1
+            and row.get("target_kind")=="person" and int(row.get("shared_target_count",1) or 1)==1
             and (local_name_match(str(row.get("email","")),str(row.get("name",""))) or name_match(str(row.get("name","")),str(row.get("evidence",""))))
             for row in result.to_dict("records")
         ]
@@ -362,7 +371,7 @@ def annotate_shared_contacts(expanded):
     return result
 def research(row):
     name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
-    if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name)):
+    if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name,category)):
         return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]","last_attempt_at":datetime.now(timezone.utc).isoformat()}
     def inspect_hit(hit):
         if hit["url"] in attempts:return
@@ -423,7 +432,7 @@ def stored_candidate_still_safe(record):
     kind=CATEGORY_CONFIG.get(category,{}).get("kind","person")
     if not valid_email(email) or directory_site(source):return False
     if kind=="person":
-        if not valid_person_target_name(name) or forbidden_person_role(email):return False
+        if not valid_person_target_name(name,category) or forbidden_person_role(email):return False
         domain=email.rsplit("@",1)[1]
         if domain not in FREE_MAIL and not (related_domains(domain,host(source)) or related_domains(domain,host(identity)) or local_name_match(email,name)):return False
         if large_institution(source) and role_address(email) and not (name_match(name,evidence) and category_match(category,evidence)):return False
@@ -432,11 +441,13 @@ def stored_candidate_still_safe(record):
 def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:return result
-    if int(result.get("algo_version",0) or 0)!=7:return None
+    source_version=int(result.get("algo_version",0) or 0)
+    if source_version not in {7,8}:return None
     old_status=str(result.get("status",""))
     result["algo_version"]=ALGO_VERSION
     if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result
     if old_status.startswith("REVIEW_INVALID_TARGET_NAME"):return result
+    if source_version==8 and old_status!="VERIFIED":return result
     result["previous_status"]=old_status
     if old_status=="VERIFIED":
         result["previous_candidate"]=json.dumps({key:record.get(key,"") for key in ("email","confidence","source_url","identity_url","evidence","matched_query","extraction_method")},ensure_ascii=False)

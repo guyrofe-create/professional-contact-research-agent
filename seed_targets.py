@@ -32,6 +32,14 @@ GENERIC_PERSON_TARGET_PHRASES = {
     "הרשמה וקבלה", "קניה ומכירה", "אודות אתר", "בלוג", "מדריך", "מרכז רפואי",
     "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
 }
+NON_NAME_TOKENS = {
+    "ivf", "vbac", "israel", "ישראל", "אתר", "קורס", "קורסי", "לידה", "לידות",
+    "הריון", "הנקה", "פוריות", "פריון", "הפריה", "גופית", "אמבריולוגיה", "אמבריולוג",
+    "דולה", "דולות", "מיילדת", "מיילדות", "יועצת", "יועץ", "אחות", "פיזיותרפיה",
+    "רצפת", "אגן", "רופא", "רופאת", "רופאים", "רפואה", "רפואי", "משפחה",
+    "מרכז", "מרכזי", "יחידה", "יחידות", "מכון", "מרפאה", "מרפאת", "בית", "ספר",
+    "pelvic", "floor", "doula", "midwife", "clinic", "center", "centre",
+}
 PERSON_CATEGORIES = {
     "gynecologist", "family_doctor", "clinic_manager", "fertility_doctor", "embryologist",
     "fertility_nurse", "fertility_consultant", "doula", "midwife", "childbirth_educator",
@@ -101,7 +109,8 @@ def valid_person_target(name, category, source_type=""):
     if any(phrase in value for phrase in GENERIC_PERSON_TARGET_PHRASES):
         return False
     words=[word for word in re.split(r"[^\w\u0590-\u05ff]+",value) if len(word)>=2 and word not in {"דר","דוקטור","פרופ","פרופסור"}]
-    return 2<=len(words)<=6 and not any(word.isdigit() for word in words) and not any(char in value for char in ("?","!","@"))
+    plausible=[word for word in words if word not in NON_NAME_TOKENS]
+    return 2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in value for char in ("?","!","@"))
 
 
 def add(rows, name, category, source="", source_type="discovery", **metadata):
@@ -247,7 +256,7 @@ def web_discovery(rows):
             expanded_queries += [f"{query} {region}" for query in queries for region in REGIONS]
         for query in expanded_queries:
             try:
-                for result in engine.text(query, region="il-he", safesearch="moderate", max_results=30, backend="bing,brave,duckduckgo") or []:
+                for result in engine.text(query, region="il-he", safesearch="moderate", max_results=30, backend="bing,brave") or []:
                     source = result.get("href") or result.get("url") or ""
                     if any(bad in urlparse(source).netloc.lower() for bad in BLOCKED):
                         continue

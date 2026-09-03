@@ -33,7 +33,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=8
+          VERSION=9
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
@@ -66,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           SEARCH_CALL_LIMIT: 12000
           SEARCH_CIRCUIT_FAILURES: 20
-          SEARCH_BACKENDS: bing,brave,duckduckgo
+          SEARCH_BACKENDS: bing,brave
           RESEARCH_WORKERS: 4
           MAX_TARGETS_PER_RUN: 10000
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
@@ -81,7 +81,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import csv,json
-          VERSION=8
+          VERSION=9
           with open('targets.csv',encoding='utf-8-sig') as f:
               targets=sum(1 for _ in csv.DictReader(f))
           latest={}; cp=Path('output/checkpoint.jsonl')
