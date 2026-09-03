@@ -20,7 +20,8 @@ from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 ALGO_VERSION = 11
-FAMILY_ROUTE_VERSION = 1
+PHYSICIAN_SEARCH_VERSION = 1
+PHYSICIAN_CATEGORIES = {"family_doctor", "gynecologist", "fertility_doctor"}
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -170,14 +171,12 @@ def valid_person_target_name(name,category=""):
 def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
     search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
-    if category=="family_doctor":
+    if category in PHYSICIAN_CATEGORIES:
         # A physician's exact name alone gives the search provider the widest
-        # chance to surface the official HMO profile or the physician's site.
+        # chance to surface an official personal, clinic, hospital, or HMO page.
         return [quoted]
     queries=[f'{quoted} {profession}',f'{quoted} מייל',f'{quoted} email']
-    if category in {"gynecologist","fertility_doctor"}:
-        queries += [f'{quoted} מרפאה אתר רשמי',f'{quoted} צור קשר']
-    elif category in {"doula","midwife","childbirth_educator"}:
+    if category in {"doula","midwife","childbirth_educator"}:
         queries += [f'{quoted} אתר רשמי צור קשר',f'{quoted} אינדקס']
     elif category in {"facebook_group_admin","community_manager"}:
         queries += [f'{quoted} מנהלת קהילה',f'{quoted} מנהל קבוצה צור קשר']
@@ -404,7 +403,7 @@ def annotate_shared_contacts(expanded):
         ]
     return result
 def research(row):
-    name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"family_route_version":FAMILY_ROUTE_VERSION if category=="family_doctor" else 0,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
+    name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"physician_search_version":PHYSICIAN_SEARCH_VERSION if category in PHYSICIAN_CATEGORIES else 0,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
     if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name,category)):
         return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]","last_attempt_at":datetime.now(timezone.utc).isoformat()}
     def inspect_hit(hit):
@@ -422,7 +421,7 @@ def research(row):
                 score=candidate_score(email,url,page_text,title,context,name,category,verified_site,page_text,url)
                 if score is not None:candidates.append((score,email,url,context[:500],hit["query"],"direct_"+method,url))
         queue=[]
-        if not directory_site(url) and (not large_institution(url) or category=="family_doctor"):
+        if not directory_site(url) and (not large_institution(url) or category in PHYSICIAN_CATEGORIES):
             safe_links=links
             if config.get("kind")=="person":safe_links=[link for link in links if not any(word in urlparse(link).path.lower() for word in ("team","staff","doctors","צוות"))]
             queue=[(link,1,page_text) for link in safe_links[:6]]
@@ -436,7 +435,7 @@ def research(row):
                 if score is not None:candidates.append((score,email,u3,context[:500],hit["query"],"official_"+method,u3))
             if not large_institution(u3):queue.extend((link,1,t3) for link in links3[:3])
         crawled=set()
-        crawl_limit=10 if category=="family_doctor" else 5
+        crawl_limit=10 if category in PHYSICIAN_CATEGORIES else 5
         while queue and len(crawled)<crawl_limit:
             link,depth,parent_text=queue.pop(0)
             if link in crawled:continue
@@ -444,9 +443,9 @@ def research(row):
             if not html2:continue
             items2,links2,text2,title2,_=extract(url2,html2)
             for email,context,method in items2:
-                score=candidate_score(email,url2,text2,title2,context,name,category,True,page_text+" "+parent_text,url,verified_clinic_route=category=="family_doctor")
+                score=candidate_score(email,url2,text2,title2,context,name,category,True,page_text+" "+parent_text,url,verified_clinic_route=category in PHYSICIAN_CATEGORIES)
                 if score is not None:candidates.append((score,email,url2,context[:500],hit["query"],"linked_"+method,url))
-            if category=="family_doctor" and depth<2:
+            if category in PHYSICIAN_CATEGORIES and depth<2:
                 queue.extend((next_link,depth+1,text2) for next_link in links2[:6] if next_link not in crawled)
     if usable_identity_seed(seed_source):inspect_hit({"url":seed_source,"query":"seed_source","seed":True})
     if not candidates:
@@ -480,8 +479,8 @@ def stored_candidate_still_safe(record):
 def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:
-        if result.get("category")!="family_doctor" or int(result.get("family_route_version",0) or 0)>=FAMILY_ROUTE_VERSION:return result
-        result.update({"family_route_version":FAMILY_ROUTE_VERSION,"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
+        if result.get("category") not in PHYSICIAN_CATEGORIES or int(result.get("physician_search_version",0) or 0)>=PHYSICIAN_SEARCH_VERSION:return result
+        result.update({"physician_search_version":PHYSICIAN_SEARCH_VERSION,"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
         return result
     source_version=int(result.get("algo_version",0) or 0)
     if source_version not in {7,8,9,10}:return None
