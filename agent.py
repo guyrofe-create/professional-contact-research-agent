@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 11
+ALGO_VERSION = 12
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -46,6 +46,7 @@ OFFICIAL_LINK_WORDS = ("website", "official site", "personal site", "clinic site
 PROFILE_PATH_HINTS = ("doctorprofile", "/doctor/", "/doctors/", "/experts/", "/profile/", "/people/", "doctorssearch/dr/")
 GENERIC_LIST_PATHS = ("/doctors/", "/experts/", "/results", "/search", "/index", "/contact", "/contact-us")
 INSTITUTION_LINK_WORDS = ("department", "unit", "clinic", "מחלקה", "יחידה", "מרפאה", "אגף")
+CLINIC_ROUTE_WORDS = INSTITUTION_LINK_WORDS + ("branch", "medical center", "סניף", "מרכז רפואי", "שירותי המרפאה")
 LARGE_INSTITUTION_DOMAINS = {
     "tasmc.org.il", "sheba.co.il", "hadassah.org.il", "rambam.org.il", "szmc.org.il",
     "clalit.co.il", "maccabi4u.co.il", "meuhedet.co.il", "leumit.co.il", "gov.il",
@@ -56,7 +57,7 @@ LARGE_INSTITUTION_DOMAINS = {
 ORGANIZATION_DOMAIN_GROUPS = (
     {"tasmc.org.il", "tlvmc.gov.il"},
     {"maccabi4u.co.il", "mac.org.il"},
-    {"clalit.co.il", "hospitals.clalit.co.il"},
+    {"clalit.co.il", "hospitals.clalit.co.il", "clalit.org.il"},
 )
 INVALID_TARGET_NAMES = {"ראשי", "אודות", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית"}
 CATEGORY_CONFIG = {
@@ -168,13 +169,12 @@ def valid_person_target_name(name,category=""):
 def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
     search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
-    queries=[f'{quoted} {profession}',f'{quoted} מייל',f'{quoted} email']
     if category=="family_doctor":
-        queries += [
-            f'{quoted} (site:clalit.co.il OR site:maccabi4u.co.il OR site:meuhedet.co.il OR site:leumit.co.il)',
-            f'{quoted} מרפאה קופת חולים צור קשר',
-        ]
-    elif category in {"gynecologist","fertility_doctor"}:
+        # A physician's exact name alone gives the search provider the widest
+        # chance to surface the official HMO profile or the physician's site.
+        return [quoted]
+    queries=[f'{quoted} {profession}',f'{quoted} מייל',f'{quoted} email']
+    if category in {"gynecologist","fertility_doctor"}:
         queries += [f'{quoted} מרפאה אתר רשמי',f'{quoted} צור קשר']
     elif category in {"doula","midwife","childbirth_educator"}:
         queries += [f'{quoted} אתר רשמי צור קשר',f'{quoted} אינדקס']
@@ -306,12 +306,12 @@ def extract(url,html):
     links=[]; official_links=[]
     for anchor in soup.find_all("a",href=True):
         href=urljoin(url,anchor["href"]); label=(anchor.get_text(" ",strip=True)+" "+anchor["href"]).lower()
-        if registeredish(host(href))==registeredish(host(url)) and any(w in label for w in CONTACT_WORDS):links.append(href)
+        if registeredish(host(href))==registeredish(host(url)) and any(w in label for w in CONTACT_WORDS+CLINIC_ROUTE_WORDS):links.append(href)
         elif href.startswith("http") and registeredish(host(href))!=registeredish(host(url)) and not blocked_url(href):
             anchor_text=norm(anchor.get_text(" ",strip=True))
             if any(norm(w) in anchor_text for w in OFFICIAL_LINK_WORDS) and len(anchor_text)<=80:official_links.append(href)
     title=soup.title.get_text(" ",strip=True) if soup.title else ""; return list(dict.fromkeys(found)),list(dict.fromkeys(links))[:6],text[:60000],title,list(dict.fromkeys(official_links))[:2]
-def candidate_score(email,url,page_text,title,context,name,category,verified_site,identity_text="",identity_url=""):
+def candidate_score(email,url,page_text,title,context,name,category,verified_site,identity_text="",identity_url="",verified_clinic_route=False):
     if not valid_email(email) or host(url) in THIRD_PARTY_LEAD_DOMAINS or directory_site(url):return None
     if any(x in urlparse(url).path.lower() for x in GENERAL_CONTENT_PATHS):return None
     kind=CATEGORY_CONFIG.get(category,{"kind":"person"}).get("kind","person")
@@ -340,7 +340,11 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
             if not (local_name_match(email,name) and direct_context):return None
         if large_institution(url):
             if role_address(email):
-                if not ((direct_context and context_profession) or (url==identity_url and title_identity and context_profession and same_domain)):return None
+                routed_clinic_contact=(
+                    verified_clinic_route and linked_identity and page_email_count<=3
+                    and any(norm(word) in norm(page_text[:5000]) for word in CLINIC_ROUTE_WORDS+CONTACT_WORDS)
+                )
+                if not ((direct_context and context_profession) or (url==identity_url and title_identity and context_profession and same_domain) or routed_clinic_contact):return None
                 return 82
             if not (direct_context or title_identity or (linked_identity and context_profession)):return None
             return 98 if direct_context else 90
@@ -417,10 +421,10 @@ def research(row):
                 score=candidate_score(email,url,page_text,title,context,name,category,verified_site,page_text,url)
                 if score is not None:candidates.append((score,email,url,context[:500],hit["query"],"direct_"+method,url))
         queue=[]
-        if not directory_site(url) and not large_institution(url):
+        if not directory_site(url) and (not large_institution(url) or category=="family_doctor"):
             safe_links=links
             if config.get("kind")=="person":safe_links=[link for link in links if not any(word in urlparse(link).path.lower() for word in ("team","staff","doctors","צוות"))]
-            queue=safe_links[:4]
+            queue=[(link,1,page_text) for link in safe_links[:6]]
         for external in official_links:
             u3,h3=fetch(external); attempts.append(u3)
             if not h3:continue
@@ -429,17 +433,20 @@ def research(row):
             for email,context,method in items3:
                 score=candidate_score(email,u3,t3,title3,context,name,category,True,page_text,url)
                 if score is not None:candidates.append((score,email,u3,context[:500],hit["query"],"official_"+method,u3))
-            if not large_institution(u3):queue.extend(links3[:3])
+            if not large_institution(u3):queue.extend((link,1,t3) for link in links3[:3])
         crawled=set()
-        while queue and len(crawled)<5:
-            link=queue.pop(0)
+        crawl_limit=10 if category=="family_doctor" else 5
+        while queue and len(crawled)<crawl_limit:
+            link,depth,parent_text=queue.pop(0)
             if link in crawled:continue
             crawled.add(link); url2,html2=fetch(link); attempts.append(url2)
             if not html2:continue
             items2,links2,text2,title2,_=extract(url2,html2)
             for email,context,method in items2:
-                score=candidate_score(email,url2,text2,title2,context,name,category,True,page_text,url)
+                score=candidate_score(email,url2,text2,title2,context,name,category,True,page_text+" "+parent_text,url,verified_clinic_route=category=="family_doctor")
                 if score is not None:candidates.append((score,email,url2,context[:500],hit["query"],"linked_"+method,url))
+            if category=="family_doctor" and depth<2:
+                queue.extend((next_link,depth+1,text2) for next_link in links2[:6] if next_link not in crawled)
     if usable_identity_seed(seed_source):inspect_hit({"url":seed_source,"query":"seed_source","seed":True})
     if not candidates:
         for hit in search_web(name,category,license_number,state=search_state):
@@ -473,11 +480,12 @@ def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:return result
     source_version=int(result.get("algo_version",0) or 0)
-    if source_version not in {7,8,9,10}:return None
+    if source_version not in {7,8,9,10,11}:return None
     old_status=str(result.get("status",""))
     result["algo_version"]=ALGO_VERSION
     if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result
     if old_status.startswith("REVIEW_INVALID_TARGET_NAME"):return result
+    if source_version==11 and result.get("category")!="family_doctor":return result
     if source_version in {8,9,10} and old_status not in {"VERIFIED","NO_VERIFIED_PUBLIC_EMAIL"}:return result
     result["previous_status"]=old_status
     if old_status=="VERIFIED":
