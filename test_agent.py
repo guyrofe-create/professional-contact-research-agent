@@ -14,6 +14,11 @@ class IdentityValidationTests(unittest.TestCase):
     def test_family_doctor_search_uses_exact_name_only(self):
         self.assertEqual(['"ד״ר דוד כהן"'], agent.search_queries("ד״ר דוד כהן", "family_doctor"))
 
+    def test_all_doctor_searches_use_exact_name_only(self):
+        for category in ("family_doctor", "gynecologist", "fertility_doctor"):
+            with self.subTest(category=category):
+                self.assertEqual(['"ד״ר דוד כהן"'], agent.search_queries("ד״ר דוד כהן", category))
+
     def test_family_doctor_hmo_clinic_route_email_is_accepted(self):
         score = agent.candidate_score(
             "clinic@clalit.org.il", "https://www.clalit.co.il/clinic/contact",
@@ -27,6 +32,12 @@ class IdentityValidationTests(unittest.TestCase):
     def test_family_doctor_terminal_v11_result_is_researched_again(self):
         old = {"algo_version": 11, "name": "דוד כהן", "category": "family_doctor", "status": "NO_VERIFIED_PUBLIC_EMAIL"}
         self.assertEqual("PENDING_ALGO_UPGRADE", agent.migrate_checkpoint_row(old)["status"])
+
+    def test_every_physician_terminal_v11_result_is_researched_again(self):
+        for category in ("family_doctor", "gynecologist", "fertility_doctor"):
+            old = {"algo_version": 11, "name": "דוד כהן", "category": category, "status": "NO_VERIFIED_PUBLIC_EMAIL"}
+            with self.subTest(category=category):
+                self.assertEqual("PENDING_ALGO_UPGRADE", agent.migrate_checkpoint_row(old)["status"])
 
     def test_exact_hebrew_person_name_required(self):
         self.assertTrue(agent.name_match("שירלי לויט דרסן", "שירלי לויט דרסן יועצת הנקה מוסמכת"))
