@@ -11,6 +11,23 @@ import seed_targets
 
 
 class IdentityValidationTests(unittest.TestCase):
+    def test_family_doctor_search_uses_exact_name_only(self):
+        self.assertEqual(['"ד״ר דוד כהן"'], agent.search_queries("ד״ר דוד כהן", "family_doctor"))
+
+    def test_family_doctor_hmo_clinic_route_email_is_accepted(self):
+        score = agent.candidate_score(
+            "clinic@clalit.org.il", "https://www.clalit.co.il/clinic/contact",
+            "מרפאת הדרים צור קשר clinic@clalit.org.il", "מרפאת הדרים",
+            "דואר אלקטרוני clinic@clalit.org.il", "דוד כהן", "family_doctor", True,
+            "דוד כהן מומחה ברפואת משפחה מרפאת הדרים", "https://www.clalit.co.il/doctor/dr-cohen",
+            verified_clinic_route=True,
+        )
+        self.assertGreaterEqual(score, 75)
+
+    def test_family_doctor_terminal_v11_result_is_researched_again(self):
+        old = {"algo_version": 11, "name": "דוד כהן", "category": "family_doctor", "status": "NO_VERIFIED_PUBLIC_EMAIL"}
+        self.assertEqual("PENDING_ALGO_UPGRADE", agent.migrate_checkpoint_row(old)["status"])
+
     def test_exact_hebrew_person_name_required(self):
         self.assertTrue(agent.name_match("שירלי לויט דרסן", "שירלי לויט דרסן יועצת הנקה מוסמכת"))
         self.assertFalse(agent.name_match("שירלי לויט דרסן", "רשות המסים של מחוז בואנוס איירס"))
