@@ -11,6 +11,14 @@ import seed_targets
 
 
 class IdentityValidationTests(unittest.TestCase):
+    def test_recovery_restores_only_safe_verified_rows(self):
+        verified={"algo_version":agent.ALGO_VERSION,"physician_search_version":agent.PHYSICIAN_SEARCH_VERSION,"status":"VERIFIED","name":"דנה לוי","category":"gynecologist","email":"dana.levy@gmail.com","source_url":"https://dr-dana.example.co.il/","identity_url":"https://dr-dana.example.co.il/","evidence":"דנה לוי גינקולוגית"}
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/"recovered.jsonl"; path.write_text(json.dumps(verified,ensure_ascii=False)+"\n",encoding="utf-8")
+            stored={("דנה לוי","gynecologist"):{"status":"PENDING_ALGO_UPGRADE","name":"דנה לוי","category":"gynecologist"}}
+            restored=agent.restore_verified_recovery(stored,path)
+        self.assertEqual(restored[("דנה לוי","gynecologist")]["status"],"VERIFIED")
+
     def test_safe_verified_physician_survives_search_version_upgrade(self):
         record={
             "algo_version":agent.ALGO_VERSION,
