@@ -2,16 +2,16 @@
   "algo_version": 11,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 977,
-  "verified": 673,
-  "not_verified": 304,
-  "pending": 6217,
+  "resolved_targets": 1624,
+  "verified": 718,
+  "not_verified": 906,
+  "pending": 5570,
   "review": 0,
-  "unique_emails": 402,
-  "personalization_safe_emails": 38,
-  "organization_or_shared_routes": 364,
-  "direct_emails": 367,
-  "institutional_emails": 48,
+  "unique_emails": 446,
+  "personalization_safe_emails": 50,
+  "organization_or_shared_routes": 396,
+  "direct_emails": 395,
+  "institutional_emails": 50,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 16,
@@ -38,10 +38,10 @@
       "VERIFIED": 1
     },
     "community_clinic": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 40,
-      "PENDING_ALGO_UPGRADE": 16,
-      "PENDING_SEARCH_PROVIDER": 62,
-      "VERIFIED": 12
+      "NO_VERIFIED_PUBLIC_EMAIL": 51,
+      "PENDING_ALGO_UPGRADE": 0,
+      "PENDING_SEARCH_PROVIDER": 66,
+      "VERIFIED": 13
     },
     "community_manager": {
       "NO_VERIFIED_PUBLIC_EMAIL": 18,
@@ -74,10 +74,10 @@
       "VERIFIED": 11
     },
     "family_doctor": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3524,
-      "PENDING_SEARCH_PROVIDER": 39,
-      "VERIFIED": 4
+      "NO_VERIFIED_PUBLIC_EMAIL": 303,
+      "PENDING_ALGO_UPGRADE": 2382,
+      "PENDING_SEARCH_PROVIDER": 862,
+      "VERIFIED": 20
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 5,
@@ -99,9 +99,9 @@
     },
     "fertility_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2,
+      "PENDING_ALGO_UPGRADE": 1,
       "PENDING_SEARCH_PROVIDER": 11,
-      "VERIFIED": 7
+      "VERIFIED": 8
     },
     "fertility_nurse": {
       "NO_VERIFIED_PUBLIC_EMAIL": 4,
@@ -116,10 +116,10 @@
       "VERIFIED": 5
     },
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2297,
-      "PENDING_SEARCH_PROVIDER": 0,
-      "VERIFIED": 49
+      "NO_VERIFIED_PUBLIC_EMAIL": 288,
+      "PENDING_ALGO_UPGRADE": 1225,
+      "PENDING_SEARCH_PROVIDER": 757,
+      "VERIFIED": 76
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 6,
