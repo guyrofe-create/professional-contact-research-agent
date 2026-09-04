@@ -20,7 +20,7 @@ from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 ALGO_VERSION = 11
-PHYSICIAN_SEARCH_VERSION = 1
+PHYSICIAN_SEARCH_VERSION = 2
 PHYSICIAN_CATEGORIES = {"family_doctor", "gynecologist", "fertility_doctor"}
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
@@ -190,18 +190,23 @@ def _search_once(query,max_results):
     with SEARCH_LOCK:
         if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:return [],"limit"
         SEARCH_CALLS+=1
+    collected=[]; seen=set(); providers=[]; last_error=None
     serpapi_key=os.getenv("SERPAPI_KEY","").strip()
     if serpapi_key:
-        response=http_session().get("https://serpapi.com/search.json",params={"engine":"google","q":query,"gl":"il","hl":"he","num":max_results,"api_key":serpapi_key},timeout=(5,20))
-        response.raise_for_status()
-        return [{"href":x.get("link",""),"title":x.get("title",""),"body":x.get("snippet","")} for x in response.json().get("organic_results",[])],"serpapi"
+        try:
+            response=http_session().get("https://serpapi.com/search.json",params={"engine":"google","q":query,"gl":"il","hl":"he","num":max_results,"api_key":serpapi_key},timeout=(5,20))
+            response.raise_for_status()
+            for item in response.json().get("organic_results",[]):
+                row={"href":item.get("link",""),"title":item.get("title",""),"body":item.get("snippet","")}; url=row["href"]
+                if url and url not in seen:seen.add(url); collected.append(row)
+            providers.append("google")
+        except Exception as exc:last_error=exc
     # A comma-separated backend value can silently yield no results in some ddgs
     # releases. Query each configured provider independently and then fall back to
     # auto. An empty answer from one provider is not proof that the target has no
     # public web presence.
     backends=[x.strip() for x in SEARCH_BACKENDS.split(",") if x.strip()]
-    backends += ["auto"]
-    collected=[]; seen=set(); last_error=None
+    if not backends:backends=["auto"]
     for backend in dict.fromkeys(backends):
         try:
             rows=DDGS(timeout=12).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend=backend) or []
@@ -209,11 +214,21 @@ def _search_once(query,max_results):
                 url=row.get("href") or row.get("url") or ""
                 if url and url not in seen:
                     seen.add(url); collected.append(row)
-            if collected: return collected,f"ddgs:{backend}"
+            providers.append(f"ddgs:{backend}")
         except Exception as exc:
             if "No results found" not in str(exc): last_error=exc
+    if not collected and "auto" not in backends:
+        try:
+            rows=DDGS(timeout=12).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend="auto") or []
+            for row in rows:
+                url=row.get("href") or row.get("url") or ""
+                if url and url not in seen:seen.add(url); collected.append(row)
+            providers.append("ddgs:auto")
+        except Exception as exc:
+            if "No results found" not in str(exc):last_error=exc
+    if collected:return collected[:max_results],"+".join(providers)
     if last_error: raise last_error
-    return [],"ddgs:empty"
+    return [],"+".join(providers) or "ddgs:empty"
 def search_web(name,category,license_number="",max_results=10,state=None):
     global SEARCH_CONSECUTIVE_FAILURES,SEARCH_CIRCUIT_OPEN
     state=state if state is not None else {}; state.update({"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False})
@@ -449,7 +464,8 @@ def research(row):
                 queue.extend((next_link,depth+1,text2) for next_link in links2[:6] if next_link not in crawled)
     if usable_identity_seed(seed_source):inspect_hit({"url":seed_source,"query":"seed_source","seed":True})
     if not candidates:
-        for hit in search_web(name,category,license_number,state=search_state):
+        result_limit=25 if category in PHYSICIAN_CATEGORIES else 10
+        for hit in search_web(name,category,license_number,max_results=result_limit,state=search_state):
             inspect_hit(hit)
             if ranked_candidates(candidates) and ranked_candidates(candidates)[0][0]>=90:break
     candidates=ranked_candidates(candidates)
@@ -457,7 +473,10 @@ def research(row):
         score,email,source,evidence,query,method,identity_url=candidates[0]; alternates=[serialized_candidate(x) for x in candidates[1:3]]; return base|{"email":email,"email_type":classify(email,category),"confidence":score,"source_url":source,"identity_url":identity_url,"status":"VERIFIED","evidence":evidence,"matched_query":query,"extraction_method":method,"alternate_emails":json.dumps(alternates,ensure_ascii=False),"candidate_count":len(candidates),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False),"last_attempt_at":datetime.now(timezone.utc).isoformat()}
     # Zero search results is inconclusive. It must remain retryable instead of
     # being permanently recorded as "no public email".
-    pending=search_state.get("circuit_open") or search_state.get("results",0)==0 or (search_state.get("results",0)>0 and search_state.get("pages_fetched",0)==0)
+    # A single exact-name result set cannot prove that a physician has no
+    # public route. Keep physicians retryable so later engines/index changes
+    # can still surface an official personal, clinic, hospital, or HMO page.
+    pending=(category in PHYSICIAN_CATEGORIES) or search_state.get("circuit_open") or search_state.get("results",0)==0 or (search_state.get("results",0)>0 and search_state.get("pages_fetched",0)==0)
     retry_count=int(row.get("retry_count",0) or 0)+(1 if pending else 0)
     next_retry=(datetime.now(timezone.utc)+timedelta(hours=min(72,6*(2**min(retry_count,3))))).isoformat() if pending else ""
     status="PENDING_SEARCH_PROVIDER" if pending else "NO_VERIFIED_PUBLIC_EMAIL"
@@ -480,6 +499,11 @@ def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:
         if result.get("category") not in PHYSICIAN_CATEGORIES or int(result.get("physician_search_version",0) or 0)>=PHYSICIAN_SEARCH_VERSION:return result
+        # Never discard a previously verified candidate merely because the
+        # search strategy changed. Re-search only unsafe or unresolved rows.
+        if str(result.get("status",""))=="VERIFIED" and stored_candidate_still_safe(result):
+            result["physician_search_version"]=PHYSICIAN_SEARCH_VERSION
+            return result
         result.update({"physician_search_version":PHYSICIAN_SEARCH_VERSION,"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
         return result
     source_version=int(result.get("algo_version",0) or 0)
@@ -588,5 +612,6 @@ def main():
     frame=frame.sort_values(["priority","status","confidence"],ascending=[True,True,False]).drop_duplicates(subset=["name","category"],keep="first"); expanded=annotate_shared_contacts(expand_verified_contacts(frame))
     frame.to_csv(out/"audit.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(frame).to_excel(out/"audit.xlsx",index=False)
     found=expanded[expanded.send_eligible].sort_values(["priority","confidence"],ascending=[True,False]).drop_duplicates(subset=["email"],keep="first") if not expanded.empty else pd.DataFrame(columns=list(frame.columns)+["candidate_rank"]); found.to_csv(out/"contacts.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(found).to_excel(out/"contacts.xlsx",index=False); excel_safe_frame(frame[frame.status.str.startswith("REVIEW")]).to_excel(out/"review.xlsx",index=False)
-    summary={"algo_version":ALGO_VERSION,"touched_targets":len(frame),"resolved_targets":int((~frame.status.str.startswith("PENDING")).sum()),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"pending":int(frame.status.str.startswith("PENDING").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"personalization_safe_emails":int(found.personalization_safe.sum()) if not found.empty else 0,"search_calls":SEARCH_CALLS,"search_circuit_open":SEARCH_CIRCUIT_OPEN,"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
+    shared_rows=int(found.shared_contact.sum()) if not found.empty else 0
+    summary={"algo_version":ALGO_VERSION,"physician_search_version":PHYSICIAN_SEARCH_VERSION,"touched_targets":len(frame),"resolved_targets":int((~frame.status.str.startswith("PENDING")).sum()),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"pending":int(frame.status.str.startswith("PENDING").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"personalization_safe_emails":int(found.personalization_safe.sum()) if not found.empty else 0,"organization_or_shared_routes":int((found.outreach_scope=="ORGANIZATION_OR_SHARED_ROUTE").sum()) if not found.empty else 0,"shared_route_rows":shared_rows,"search_calls":SEARCH_CALLS,"search_circuit_open":SEARCH_CIRCUIT_OPEN,"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
 if __name__=="__main__": main()
