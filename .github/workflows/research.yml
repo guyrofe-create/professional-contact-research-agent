@@ -2,6 +2,9 @@ name: Autonomous Contact Research
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/run-now']
   schedule:
     - cron: '17 */6 * * *'
       timezone: 'Asia/Jerusalem'
@@ -12,7 +15,7 @@ permissions:
 
 concurrency:
   group: contact-research
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   research:
@@ -67,7 +70,7 @@ jobs:
           SEARCH_CALL_LIMIT: 12000
           SEARCH_CIRCUIT_FAILURES: 20
           SEARCH_BACKENDS: bing,brave
-          RESEARCH_WORKERS: 4
+          RESEARCH_WORKERS: 6
           MAX_TARGETS_PER_RUN: 10000
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: |
