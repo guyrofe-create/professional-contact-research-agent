@@ -2,16 +2,16 @@
   "algo_version": 11,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 1305,
-  "verified": 838,
-  "not_verified": 467,
-  "pending": 5889,
+  "resolved_targets": 1393,
+  "verified": 924,
+  "not_verified": 469,
+  "pending": 5801,
   "review": 0,
-  "unique_emails": 527,
-  "personalization_safe_emails": 76,
-  "organization_or_shared_routes": 451,
-  "direct_emails": 461,
-  "institutional_emails": 67,
+  "unique_emails": 594,
+  "personalization_safe_emails": 100,
+  "organization_or_shared_routes": 494,
+  "direct_emails": 516,
+  "institutional_emails": 81,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 24,
@@ -38,9 +38,9 @@
       "VERIFIED": 1
     },
     "community_clinic": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 94,
+      "NO_VERIFIED_PUBLIC_EMAIL": 95,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 22,
+      "PENDING_SEARCH_PROVIDER": 21,
       "VERIFIED": 14
     },
     "community_manager": {
@@ -75,9 +75,9 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2508,
-      "PENDING_SEARCH_PROVIDER": 1020,
-      "VERIFIED": 39
+      "PENDING_ALGO_UPGRADE": 1265,
+      "PENDING_SEARCH_PROVIDER": 2236,
+      "VERIFIED": 66
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 9,
@@ -86,9 +86,9 @@
       "VERIFIED": 9
     },
     "fertility_center": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 7,
+      "NO_VERIFIED_PUBLIC_EMAIL": 8,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_SEARCH_PROVIDER": 5,
       "VERIFIED": 7
     },
     "fertility_consultant": {
@@ -117,9 +117,9 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 1256,
-      "PENDING_SEARCH_PROVIDER": 926,
-      "VERIFIED": 164
+      "PENDING_ALGO_UPGRADE": 23,
+      "PENDING_SEARCH_PROVIDER": 2100,
+      "VERIFIED": 223
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 7,
