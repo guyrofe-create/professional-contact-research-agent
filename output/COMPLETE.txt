@@ -1,6 +1,6 @@
 IN_PROGRESS
-completed=1115
+completed=1305
 touched=7194
-pending=6079
+pending=5889
 targets=7194
 algo_version=11
