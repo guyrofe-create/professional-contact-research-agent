@@ -11,6 +11,24 @@ import seed_targets
 
 
 class IdentityValidationTests(unittest.TestCase):
+    def test_safe_verified_physician_survives_search_version_upgrade(self):
+        record={
+            "algo_version":agent.ALGO_VERSION,
+            "physician_search_version":agent.PHYSICIAN_SEARCH_VERSION-1,
+            "status":"VERIFIED","name":"דנה לוי","category":"gynecologist",
+            "email":"dana.levy@gmail.com","source_url":"https://dr-dana.example.co.il/",
+            "identity_url":"https://dr-dana.example.co.il/","evidence":"דנה לוי גינקולוגית",
+        }
+        migrated=agent.migrate_checkpoint_row(record)
+        self.assertEqual(migrated["status"],"VERIFIED")
+        self.assertEqual(migrated["physician_search_version"],agent.PHYSICIAN_SEARCH_VERSION)
+
+    def test_physician_without_candidate_remains_retryable(self):
+        row={"name":"דנה לוי","category":"gynecologist","seed_source":""}
+        with patch.object(agent,"search_web",return_value=iter([])):
+            result=agent.research(row)
+        self.assertEqual(result["status"],"PENDING_SEARCH_PROVIDER")
+
     def test_family_doctor_search_uses_exact_name_only(self):
         self.assertEqual(['"ד״ר דוד כהן"'], agent.search_queries("ד״ר דוד כהן", "family_doctor"))
 
