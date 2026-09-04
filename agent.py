@@ -567,6 +567,17 @@ def retain_active_checkpoint(stored,rows,out):
         for key,value in retired.items():archived[key]=dict(value)|{"retired_at":datetime.now(timezone.utc).isoformat()}
         archive.write_text("".join(json.dumps(row,ensure_ascii=False)+"\n" for row in archived.values()),encoding="utf-8")
     return {key:value for key,value in stored.items() if key in active}
+def restore_verified_recovery(stored,path):
+    source=Path(path)
+    if not source.exists():return stored
+    for line in source.read_text(encoding="utf-8",errors="ignore").splitlines():
+        try:record=json.loads(line)
+        except Exception:continue
+        key=(str(record.get("name","")).strip(),str(record.get("category","")).strip())
+        current=stored.get(key)
+        if str(record.get("status",""))=="VERIFIED" and stored_candidate_still_safe(record) and (not current or str(current.get("status",""))!="VERIFIED"):
+            stored[key]=record
+    return stored
 def excel_safe_frame(frame):
     safe=frame.copy()
     for col in safe.columns:
@@ -579,7 +590,7 @@ def main():
             try: result=migrate_checkpoint_row(json.loads(line))
             except Exception: continue
             if result and result.get("algo_version")==ALGO_VERSION: stored[(result.get("name",""),result.get("category",""))]=result
-    rows=load_input(args.input); stored=retain_active_checkpoint(stored,rows,out); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in stored.values()),encoding="utf-8")
+    rows=load_input(args.input); stored=retain_active_checkpoint(stored,rows,out); stored=restore_verified_recovery(stored,out/"recovered_verified.jsonl"); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in stored.values()),encoding="utf-8")
     if not args.export_only:
         with checkpoint.open("a",encoding="utf-8") as stream:
             queue=build_research_queue(rows,stored,datetime.now(timezone.utc),args.max_targets)
