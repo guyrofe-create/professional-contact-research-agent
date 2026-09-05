@@ -44,8 +44,8 @@
     },
     "community_clinic": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 37,
-      "PENDING_SEARCH_PROVIDER": 79,
+      "PENDING_ALGO_UPGRADE": 27,
+      "PENDING_SEARCH_PROVIDER": 89,
       "VERIFIED": 14
     },
     "community_manager": {
@@ -80,8 +80,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3411,
-      "PENDING_SEARCH_PROVIDER": 78,
+      "PENDING_ALGO_UPGRADE": 3399,
+      "PENDING_SEARCH_PROVIDER": 90,
       "VERIFIED": 78
     },
     "fertility_association": {
@@ -122,8 +122,8 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2069,
-      "PENDING_SEARCH_PROVIDER": 79,
+      "PENDING_ALGO_UPGRADE": 2056,
+      "PENDING_SEARCH_PROVIDER": 92,
       "VERIFIED": 198
     },
     "ivf_unit": {
@@ -200,8 +200,8 @@
     },
     "womens_health_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 1,
-      "PENDING_ALGO_UPGRADE": 21,
-      "PENDING_SEARCH_PROVIDER": 76,
+      "PENDING_ALGO_UPGRADE": 6,
+      "PENDING_SEARCH_PROVIDER": 91,
       "VERIFIED": 10
     }
   }
