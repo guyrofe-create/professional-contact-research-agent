@@ -2,68 +2,68 @@
   "algo_version": 12,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 919,
-  "verified": 916,
+  "resolved_targets": 921,
+  "verified": 918,
   "not_verified": 3,
-  "pending": 6275,
+  "pending": 6273,
   "review": 0,
-  "unique_emails": 559,
-  "personal_unique_emails": 115,
-  "organization_unique_emails": 444,
-  "shared_unique_emails": 251,
+  "unique_emails": 560,
+  "personal_unique_emails": 114,
+  "organization_unique_emails": 446,
+  "shared_unique_emails": 252,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 16,
-  "personalization_safe_emails": 115,
-  "organization_or_shared_routes": 444,
+  "personalization_safe_emails": 114,
+  "organization_or_shared_routes": 446,
   "direct_emails": 478,
   "institutional_emails": 74,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 27,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 25,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 14
     },
     "childbirth_educator": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 4,
-      "PENDING_SEARCH_PROVIDER": 7,
-      "VERIFIED": 8
+      "PENDING_ALGO_UPGRADE": 2,
+      "PENDING_SEARCH_PROVIDER": 8,
+      "VERIFIED": 9
     },
     "childbirth_school": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 1,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 0,
+      "PENDING_SEARCH_PROVIDER": 8,
       "VERIFIED": 5
     },
     "clinic_manager": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 42,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 40,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 1
     },
     "community_clinic": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 109,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 107,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 14
     },
     "community_manager": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 18,
-      "PENDING_SEARCH_PROVIDER": 7,
-      "VERIFIED": 14
+      "PENDING_ALGO_UPGRADE": 16,
+      "PENDING_SEARCH_PROVIDER": 8,
+      "VERIFIED": 15
     },
     "doula": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2,
-      "PENDING_ALGO_UPGRADE": 25,
-      "PENDING_SEARCH_PROVIDER": 5,
+      "PENDING_ALGO_UPGRADE": 23,
+      "PENDING_SEARCH_PROVIDER": 7,
       "VERIFIED": 5
     },
     "doula_school": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 10,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 7,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 6
     },
     "embryologist": {
@@ -74,38 +74,38 @@
     },
     "facebook_group_admin": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 28,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 26,
+      "PENDING_SEARCH_PROVIDER": 8,
       "VERIFIED": 11
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3483,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 3481,
+      "PENDING_SEARCH_PROVIDER": 8,
       "VERIFIED": 78
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 1,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 9
     },
     "fertility_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 7,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 4,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 7
     },
     "fertility_consultant": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 1,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 0,
+      "PENDING_SEARCH_PROVIDER": 7,
       "VERIFIED": 4
     },
     "fertility_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 4,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 2,
+      "PENDING_SEARCH_PROVIDER": 8,
       "VERIFIED": 10
     },
     "fertility_nurse": {
@@ -122,14 +122,14 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2141,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 2139,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 198
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 7,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 5,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 3
     },
     "lactation": {
@@ -140,26 +140,26 @@
     },
     "midwife": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 23,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 21,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 6
     },
     "parenting_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 10,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 8,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 1
     },
     "parenting_site": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 6,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 3,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 7
     },
     "pelvic_floor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 14,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 13,
+      "PENDING_SEARCH_PROVIDER": 8,
       "VERIFIED": 6
     },
     "perinatal_mental_health": {
@@ -176,8 +176,8 @@
     },
     "pregnancy_podcast": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 11,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 8,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 3
     },
     "sleep_consultant": {
@@ -188,20 +188,20 @@
     },
     "sperm_bank": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 6,
-      "PENDING_SEARCH_PROVIDER": 7,
+      "PENDING_ALGO_UPGRADE": 4,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 6
     },
     "women_health_creator": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 16,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 14,
+      "PENDING_SEARCH_PROVIDER": 8,
       "VERIFIED": 8
     },
     "womens_health_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 92,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_ALGO_UPGRADE": 89,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 10
     }
   }
