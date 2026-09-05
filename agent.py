@@ -55,6 +55,7 @@ LARGE_INSTITUTION_DOMAINS = {
     "tasmc.org.il", "sheba.co.il", "hadassah.org.il", "rambam.org.il", "szmc.org.il",
     "clalit.co.il", "maccabi4u.co.il", "meuhedet.co.il", "leumit.co.il", "gov.il",
     "assuta.co.il", "hospitals.clalit.co.il", "shamir.org", "laniado.org.il",
+    "hmc.co.il", "bri.co.il", "raphaelhospitals.co.il",
     "mayanei-hayeshua.co.il", "wolfson.org.il", "bmc.gov.il", "poria.health.gov.il",
     "ziv.health.gov.il", "hymc.org.il", "emekmedicalcenter.org.il",
 }
@@ -445,7 +446,12 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
             if not (local_name_match(email,name) and direct_context):return None
         if large_institution(url):
             if role_address(email):
-                if not (direct_context and context_profession):return None
+                hmo_clinic_route=(
+                    verified_clinic_route and linked_identity and page_email_count<=3
+                    and any(norm(word) in norm(page_text[:5000]) for word in ("clinic","מרפאה","מרפאת","סניף"))
+                    and any(norm(word) in norm(identity_text[:5000]) for word in ("clinic","מרפאה","מרפאת","סניף"))
+                )
+                if not ((direct_context and context_profession) or hmo_clinic_route):return None
                 return 82
             if not (direct_context or local_name_match(email,name) or (direct_identity and title_identity)):return None
             return 98 if direct_context else 90
