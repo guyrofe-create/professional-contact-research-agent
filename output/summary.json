@@ -2,16 +2,16 @@
   "algo_version": 11,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 1427,
-  "verified": 958,
-  "not_verified": 469,
-  "pending": 5767,
+  "resolved_targets": 1449,
+  "verified": 979,
+  "not_verified": 470,
+  "pending": 5745,
   "review": 0,
-  "unique_emails": 616,
-  "personalization_safe_emails": 109,
-  "organization_or_shared_routes": 507,
-  "direct_emails": 532,
-  "institutional_emails": 85,
+  "unique_emails": 630,
+  "personalization_safe_emails": 113,
+  "organization_or_shared_routes": 517,
+  "direct_emails": 541,
+  "institutional_emails": 89,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 24,
@@ -76,8 +76,8 @@
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
       "PENDING_ALGO_UPGRADE": 4,
-      "PENDING_SEARCH_PROVIDER": 3478,
-      "VERIFIED": 85
+      "PENDING_SEARCH_PROVIDER": 3473,
+      "VERIFIED": 90
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 9,
@@ -117,9 +117,9 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 17,
-      "PENDING_SEARCH_PROVIDER": 2092,
-      "VERIFIED": 237
+      "PENDING_ALGO_UPGRADE": 13,
+      "PENDING_SEARCH_PROVIDER": 2080,
+      "VERIFIED": 253
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 7,
@@ -194,9 +194,9 @@
       "VERIFIED": 8
     },
     "womens_health_center": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 62,
+      "NO_VERIFIED_PUBLIC_EMAIL": 63,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 36,
+      "PENDING_SEARCH_PROVIDER": 35,
       "VERIFIED": 10
     }
   }
