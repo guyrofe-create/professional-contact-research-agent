@@ -2,10 +2,10 @@
   "algo_version": 12,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 928,
+  "resolved_targets": 929,
   "verified": 920,
-  "not_verified": 8,
-  "pending": 6266,
+  "not_verified": 9,
+  "pending": 6265,
   "review": 0,
   "unique_emails": 563,
   "personal_unique_emails": 113,
@@ -199,9 +199,9 @@
       "VERIFIED": 8
     },
     "womens_health_center": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 1,
+      "NO_VERIFIED_PUBLIC_EMAIL": 2,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 97,
+      "PENDING_SEARCH_PROVIDER": 96,
       "VERIFIED": 10
     }
   }
