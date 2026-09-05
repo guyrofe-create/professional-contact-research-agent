@@ -122,8 +122,8 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 15,
-      "PENDING_SEARCH_PROVIDER": 2132,
+      "PENDING_ALGO_UPGRADE": 0,
+      "PENDING_SEARCH_PROVIDER": 2147,
       "VERIFIED": 199
     },
     "ivf_unit": {
