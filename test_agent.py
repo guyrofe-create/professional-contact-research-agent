@@ -351,10 +351,46 @@ class IdentityValidationTests(unittest.TestCase):
         score = agent.candidate_score(
             "ivf-unit@tlvmc.gov.il", "https://www.tasmc.org.il/doctors/dr-cohen",
             "דוד כהן מומחה פוריות IVF", "דוד כהן רופא פוריות",
-            "יחידת IVF יצירת קשר ivf-unit@tlvmc.gov.il", "דוד כהן", "fertility_doctor", True,
+            "דוד כהן מומחה פוריות יחידת IVF יצירת קשר ivf-unit@tlvmc.gov.il", "דוד כהן", "fertility_doctor", True,
             "דוד כהן מומחה פוריות", "https://www.tasmc.org.il/doctors/dr-cohen",
         )
         self.assertGreaterEqual(score, 75)
+
+    def test_hospital_route_without_person_in_email_context_is_rejected(self):
+        score = agent.candidate_score(
+            "amnioticfluid@hmc.co.il", "https://hmc.co.il/unit/amniotic-fluid",
+            "דוד כהן רופא נשים יחידת מי שפיר", "יחידת מי שפיר",
+            "יחידת מי שפיר amnioticfluid@hmc.co.il", "דוד כהן", "gynecologist", True,
+            "דוד כהן רופא נשים", "https://hmc.co.il/doctors/dr-cohen", True,
+        )
+        self.assertIsNone(score)
+
+    def test_url_encoded_email_is_normalized(self):
+        self.assertEqual("info@harechem.com", agent.norm_email("%20info@harechem.com"))
+        self.assertTrue(agent.valid_email(agent.norm_email("%20info@harechem.com")))
+
+    def test_shared_role_address_is_rechecked_on_migration(self):
+        old = {
+            "algo_version": 11, "name": "דוד כהן", "category": "gynecologist",
+            "status": "VERIFIED", "email": "clinic@hospital.org.il",
+            "source_url": "https://hospital.org.il/doctors/dr-cohen",
+            "identity_url": "https://hospital.org.il/doctors/dr-cohen",
+            "evidence": "דוד כהן רופא נשים clinic@hospital.org.il",
+            "shared_target_count": 12,
+        }
+        migrated = agent.migrate_checkpoint_row(old)
+        self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
+        self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
+        self.assertIn("clinic@hospital.org.il", migrated["previous_candidate"])
+
+    def test_non_physician_search_keeps_trying_after_unusable_hits(self):
+        calls = []
+        def fake_search(query, max_results):
+            calls.append(query)
+            return ([{"href": f"https://example.org/{len(calls)}", "title": "שרה כהן דולה", "body": ""}], "fake")
+        with patch.object(agent, "_search_once", side_effect=fake_search):
+            list(agent.search_web("שרה כהן", "doula", state={}))
+        self.assertEqual(len(agent.search_queries("שרה כהן", "doula")), len(calls))
 
     def test_all_verified_alternate_emails_are_exported(self):
         row = {

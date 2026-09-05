@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: contact-research
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   research:
@@ -30,26 +30,37 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
+      - name: Restore successful-page cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/http
+          key: contact-http-v1-${{ github.run_id }}
+          restore-keys: contact-http-v1-
       - run: pip install -r requirements.txt
       - name: Validate persisted checkpoint
         run: |
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=11
+          VERSION=12
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
+          expected_touched=0
           if progress.exists():
               text=progress.read_text(encoding='utf-8', errors='ignore')
               m=re.search(r'^completed=(\d+)$', text, re.M)
+              t=re.search(r'^touched=(\d+)$', text, re.M)
               v=re.search(r'^algo_version=(\d+)$', text, re.M)
               if m and v and int(v.group(1))==VERSION: expected=int(m.group(1))
+              if t: expected_touched=int(t.group(1))
           latest={}
+          latest_any_version={}
           if cp.exists():
               for line in cp.read_text(encoding='utf-8', errors='ignore').splitlines():
                   try:
                       row=json.loads(line)
+                      latest_any_version[(row.get('name',''), row.get('category',''))]=row
                       if row.get('algo_version')==VERSION:
                           latest[(row.get('name',''), row.get('category',''))]=row
                   except Exception:
@@ -59,6 +70,8 @@ jobs:
           print(f'checkpoint version={VERSION} completed={actual} expected_at_least={expected}')
           if expected and actual < expected:
               raise SystemExit(f'Safety stop: checkpoint regression {actual} < persisted progress {expected}')
+          if expected_touched and len(latest_any_version) < expected_touched:
+              raise SystemExit(f'Safety stop: checkpoint target loss {len(latest_any_version)} < {expected_touched}')
           PY
       - name: Validate identity and email rules
         run: python -m unittest -v test_agent.py
@@ -72,6 +85,11 @@ jobs:
           SEARCH_BACKENDS: bing,brave
           RESEARCH_WORKERS: 6
           MAX_TARGETS_PER_RUN: 10000
+          PERSIST_EVERY_TARGETS: 50
+          PERSIST_EVERY_SECONDS: 900
+          PERSIST_CHECKPOINT_CMD: python persist_progress.py
+          FETCH_CACHE_DB: .cache/http/pages.sqlite3
+          FETCH_CACHE_TTL: 604800
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: |
           mkdir -p output

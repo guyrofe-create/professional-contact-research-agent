@@ -8,10 +8,12 @@ import re
 import threading
 import time
 import unicodedata
+import subprocess
+import sqlite3
+import zlib
 from datetime import datetime, timedelta, timezone
-from functools import lru_cache
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import unquote, urljoin, urlparse
 
 import pandas as pd
 import requests
@@ -19,7 +21,7 @@ from bs4 import BeautifulSoup
 from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-ALGO_VERSION = 11
+ALGO_VERSION = 12
 PHYSICIAN_SEARCH_VERSION = 2
 PHYSICIAN_CATEGORIES = {"family_doctor", "gynecologist", "fertility_doctor"}
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
@@ -79,6 +81,21 @@ SEARCH_CONSECUTIVE_FAILURES = 0
 SEARCH_CIRCUIT_OPEN = False
 SEARCH_LOCK = threading.Lock()
 THREAD_LOCAL = threading.local()
+FETCH_LOCK = threading.Lock()
+FETCH_CACHE = {}
+FETCH_CACHE_LIMIT = int(os.getenv("FETCH_CACHE_LIMIT", "5000"))
+PROVIDER_FAILURES = {}
+PROVIDER_OPEN_UNTIL = {}
+PROVIDER_STATS = {}
+HTTP_STATS = {"requests": 0, "success": 0, "failures": 0, "cache_hits": 0}
+RUN_STARTED_AT = time.monotonic()
+PROCESSED_THIS_RUN = 0
+VERIFIED_THIS_RUN = 0
+PERSIST_EVERY_TARGETS = max(1,int(os.getenv("PERSIST_EVERY_TARGETS","50")))
+PERSIST_EVERY_SECONDS = max(60,int(os.getenv("PERSIST_EVERY_SECONDS","900")))
+PERSIST_COMMAND = os.getenv("PERSIST_CHECKPOINT_CMD","").strip()
+FETCH_CACHE_DB = os.getenv("FETCH_CACHE_DB","").strip()
+FETCH_CACHE_TTL = int(os.getenv("FETCH_CACHE_TTL","604800"))
 
 PERSON_ROLE_REJECT = {
     "sales", "marketing", "international", "logistics", "support", "customerservice",
@@ -107,6 +124,29 @@ def http_session():
         session.headers.update(HEADERS)
         THREAD_LOCAL.session = session
     return session
+def fetch_db():
+    if not FETCH_CACHE_DB:return None
+    connection=getattr(THREAD_LOCAL,"fetch_db",None)
+    if connection is None:
+        Path(FETCH_CACHE_DB).parent.mkdir(parents=True,exist_ok=True)
+        connection=sqlite3.connect(FETCH_CACHE_DB,timeout=30)
+        connection.execute("CREATE TABLE IF NOT EXISTS pages(url TEXT PRIMARY KEY, final_url TEXT, body BLOB, fetched_at REAL)")
+        THREAD_LOCAL.fetch_db=connection
+    return connection
+def persistent_fetch_get(url):
+    connection=fetch_db()
+    if connection is None:return None
+    row=connection.execute("SELECT final_url,body,fetched_at FROM pages WHERE url=?",(url,)).fetchone()
+    if not row or time.time()-row[2]>FETCH_CACHE_TTL:return None
+    try:return row[0],zlib.decompress(row[1]).decode("utf-8")
+    except Exception:return None
+def persistent_fetch_put(url,final_url,body):
+    connection=fetch_db()
+    if connection is None:return
+    try:
+        connection.execute("INSERT OR REPLACE INTO pages VALUES(?,?,?,?)",(url,final_url,zlib.compress(body.encode("utf-8"),6),time.time()))
+        connection.commit()
+    except sqlite3.Error:pass
 
 def norm(value): return re.sub(r"[^a-z0-9\u0590-\u05ff]+", " ", unicodedata.normalize("NFKD", str(value or "")).lower()).strip()
 def tokens(value): return [x for x in norm(value).split() if len(x)>=2 and x not in {"דר","דוקטור","פרופ","פרופסור","doctor","prof"}]
@@ -144,7 +184,12 @@ def allowed_search_identity_page(url,title,page_text,name,category):
     if not allowed_identity_page(url,title,page_text,name,category):return False
     path=urlparse(url).path.lower(); specific_path=any(hint in path for hint in PROFILE_PATH_HINTS)
     return name_match(name,title) or (specific_path and name_match(name,page_text[:2500]))
-def norm_email(email): return email.strip(" <>[](){}.,;:\"'").lower().replace("\u00a0","")
+def norm_email(email):
+    # Decode URL-encoded whitespace such as %20 before validation.  Without
+    # this, strings copied from malformed mailto links can become fake local
+    # parts such as %20info.
+    value=unquote(str(email or "")).replace("\u00a0"," ").strip()
+    return value.strip(" <>[](){}.,;:\"'").lower()
 def valid_email(email):
     if "@" not in email:return False
     local,domain=email.rsplit("@",1)
@@ -190,17 +235,30 @@ def _search_once(query,max_results):
     with SEARCH_LOCK:
         if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:return [],"limit"
         SEARCH_CALLS+=1
-    collected=[]; seen=set(); providers=[]; last_error=None
+    collected=[]; seen=set(); providers=[]; errors=[]
+    def available(provider):
+        return time.monotonic() >= PROVIDER_OPEN_UNTIL.get(provider,0)
+    def record(provider,ok,count=0):
+        with SEARCH_LOCK:
+            stats=PROVIDER_STATS.setdefault(provider,{"calls":0,"successes":0,"errors":0,"results":0})
+            stats["calls"]+=1; stats["results"]+=count
+            if ok:
+                stats["successes"]+=1; PROVIDER_FAILURES[provider]=0; PROVIDER_OPEN_UNTIL.pop(provider,None)
+            else:
+                stats["errors"]+=1; PROVIDER_FAILURES[provider]=PROVIDER_FAILURES.get(provider,0)+1
+                if PROVIDER_FAILURES[provider]>=SEARCH_CIRCUIT_FAILURES:
+                    PROVIDER_OPEN_UNTIL[provider]=time.monotonic()+900
+    target_results=min(max_results,8)
     serpapi_key=os.getenv("SERPAPI_KEY","").strip()
-    if serpapi_key:
+    if serpapi_key and available("google"):
         try:
             response=http_session().get("https://serpapi.com/search.json",params={"engine":"google","q":query,"gl":"il","hl":"he","num":max_results,"api_key":serpapi_key},timeout=(5,20))
             response.raise_for_status()
             for item in response.json().get("organic_results",[]):
                 row={"href":item.get("link",""),"title":item.get("title",""),"body":item.get("snippet","")}; url=row["href"]
                 if url and url not in seen:seen.add(url); collected.append(row)
-            providers.append("google")
-        except Exception as exc:last_error=exc
+            providers.append("google"); record("google",True,len(collected))
+        except Exception as exc:errors.append(exc); record("google",False)
     # A comma-separated backend value can silently yield no results in some ddgs
     # releases. Query each configured provider independently and then fall back to
     # auto. An empty answer from one provider is not proof that the target has no
@@ -208,26 +266,34 @@ def _search_once(query,max_results):
     backends=[x.strip() for x in SEARCH_BACKENDS.split(",") if x.strip()]
     if not backends:backends=["auto"]
     for backend in dict.fromkeys(backends):
+        if len(collected)>=target_results:break
+        provider=f"ddgs:{backend}"
+        if not available(provider):continue
         try:
             rows=DDGS(timeout=12).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend=backend) or []
             for row in rows:
                 url=row.get("href") or row.get("url") or ""
                 if url and url not in seen:
                     seen.add(url); collected.append(row)
-            providers.append(f"ddgs:{backend}")
+            providers.append(provider); record(provider,True,len(rows))
         except Exception as exc:
-            if "No results found" not in str(exc): last_error=exc
-    if not collected and "auto" not in backends:
+            if "No results found" not in str(exc):errors.append(exc); record(provider,False)
+            else:record(provider,True,0)
+    if not collected and "auto" not in backends and available("ddgs:auto"):
         try:
             rows=DDGS(timeout=12).text(query,region="il-he",safesearch="moderate",max_results=max_results,backend="auto") or []
             for row in rows:
                 url=row.get("href") or row.get("url") or ""
                 if url and url not in seen:seen.add(url); collected.append(row)
-            providers.append("ddgs:auto")
+            providers.append("ddgs:auto"); record("ddgs:auto",True,len(rows))
         except Exception as exc:
-            if "No results found" not in str(exc):last_error=exc
+            if "No results found" not in str(exc):errors.append(exc); record("ddgs:auto",False)
+            else:record("ddgs:auto",True,0)
     if collected:return collected[:max_results],"+".join(providers)
-    if last_error: raise last_error
+    configured=(['google'] if serpapi_key else [])+[f"ddgs:{x}" for x in backends]+(["ddgs:auto"] if "auto" not in backends else [])
+    if configured and all(not available(x) for x in configured):
+        SEARCH_CIRCUIT_OPEN=True
+    if errors and not providers: raise errors[-1]
     return [],"+".join(providers) or "ddgs:empty"
 def search_web(name,category,license_number="",max_results=10,state=None):
     global SEARCH_CONSECUTIVE_FAILURES,SEARCH_CIRCUIT_OPEN
@@ -260,14 +326,33 @@ def search_web(name,category,license_number="",max_results=10,state=None):
             url=result.get("href") or result.get("url") or ""; title=result.get("title",""); snippet=result.get("body","")
             if url in seen or blocked_url(url) or not name_match(name,title+" "+snippet):continue
             seen.add(url); state["results"]+=1; yield {"url":url,"title":title,"snippet":snippet,"query":query,"seed":False}
-        if state["results"]:break
-@lru_cache(maxsize=1024)
+        # Non-physician categories deliberately continue to their next query
+        # unless the caller stops after finding a verified address.
 def fetch(url):
     if blocked_url(url): return url,""
+    with FETCH_LOCK:
+        cached=FETCH_CACHE.get(url)
+        if cached:
+            HTTP_STATS["cache_hits"]+=1
+            return cached
+    cached=persistent_fetch_get(url)
+    if cached:
+        with FETCH_LOCK:
+            HTTP_STATS["cache_hits"]+=1; FETCH_CACHE[url]=cached
+        return cached
     try:
+        with FETCH_LOCK:HTTP_STATS["requests"]+=1
         r=http_session().get(url,timeout=(4,10),allow_redirects=True)
-        if r.status_code==200 and "text/html" in r.headers.get("content-type","text/html") and not blocked_url(r.url): return r.url,r.text
+        if r.status_code==200 and "text/html" in r.headers.get("content-type","text/html") and not blocked_url(r.url):
+            result=(r.url,r.text)
+            with FETCH_LOCK:
+                HTTP_STATS["success"]+=1
+                if len(FETCH_CACHE)>=FETCH_CACHE_LIMIT:FETCH_CACHE.pop(next(iter(FETCH_CACHE)))
+                FETCH_CACHE[url]=result
+            persistent_fetch_put(url,r.url,r.text)
+            return result
     except requests.RequestException: pass
+    with FETCH_LOCK:HTTP_STATS["failures"]+=1
     return url,""
 def nearest_context(node,needle="",limit=700):
     candidates=[]
@@ -341,13 +426,18 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
     identity_domain_match=bool(identity_url) and related_domains(email_domain,host(identity_url))
     related_site=bool(identity_url) and related_domains(host(url),host(identity_url))
     linked_identity=bool(identity_url and url!=identity_url and inherited_identity and related_site)
-    free_mail=email_domain in FREE_MAIL
+    direct_identity=bool(url==identity_url and (title_identity or intro_identity))
     page_email_count=len({norm_email(x) for x in EMAIL_RE.findall(page_text) if valid_email(norm_email(x))})
+    personal_site_route=bool(
+        linked_identity and not large_institution(url) and not directory_site(url)
+        and not large_institution(identity_url) and page_email_count<=2
+    )
+    free_mail=email_domain in FREE_MAIL
     if not profession or not (verified_site or linked_identity):return None
     if kind=="person":
         if forbidden_person_role(email):return None
         if free_mail:
-            if not (direct_context or (title_identity and page_email_count<=2)):return None
+            if not (direct_context or local_name_match(email,name) or (personal_site_route and page_email_count<=2)):return None
             return 100 if direct_context else 92
         # A footer/support address from another company is not the person's address,
         # even when the doctor's name appears elsewhere on the same long page.
@@ -355,18 +445,14 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
             if not (local_name_match(email,name) and direct_context):return None
         if large_institution(url):
             if role_address(email):
-                routed_clinic_contact=(
-                    verified_clinic_route and linked_identity and page_email_count<=3
-                    and any(norm(word) in norm(page_text[:5000]) for word in CLINIC_ROUTE_WORDS+CONTACT_WORDS)
-                )
-                if not ((direct_context and context_profession) or (url==identity_url and title_identity and context_profession and same_domain) or routed_clinic_contact):return None
+                if not (direct_context and context_profession):return None
                 return 82
-            if not (direct_context or title_identity or (linked_identity and context_profession)):return None
+            if not (direct_context or local_name_match(email,name) or (direct_identity and title_identity)):return None
             return 98 if direct_context else 90
         if role_address(email):
-            if not ((direct_context and (context_profession or title_identity)) or (linked_identity and page_email_count<=3)):return None
+            if not ((direct_context and (context_profession or title_identity)) or personal_site_route):return None
             return 88 if direct_context else 80
-        if not (direct_context or title_identity or local_name_match(email,name) or (linked_identity and page_email_count<=3)):return None
+        if not (direct_context or local_name_match(email,name) or direct_identity or personal_site_route):return None
         return 98 if direct_context else 90
     if not (same_domain or direct_context):return None
     if local in GENERIC_LOCAL and not (context_profession or direct_context or title_identity):return None
@@ -492,7 +578,10 @@ def stored_candidate_still_safe(record):
         if not valid_person_target_name(name,category) or forbidden_person_role(email):return False
         domain=email.rsplit("@",1)[1]
         if domain not in FREE_MAIL and not (related_domains(domain,host(source)) or related_domains(domain,host(identity)) or local_name_match(email,name)):return False
-        if large_institution(source) and role_address(email) and not (name_match(name,evidence) and category_match(category,evidence)):return False
+        if role_address(email) and int(record.get("shared_target_count",1) or 1)>1:return False
+        if large_institution(source):
+            if role_address(email) and not (name_match(name,evidence) and category_match(category,evidence)):return False
+            if not role_address(email) and not (name_match(name,evidence) or local_name_match(email,name)):return False
     return True
 
 def migrate_checkpoint_row(record):
@@ -507,7 +596,7 @@ def migrate_checkpoint_row(record):
         result.update({"physician_search_version":PHYSICIAN_SEARCH_VERSION,"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
         return result
     source_version=int(result.get("algo_version",0) or 0)
-    if source_version not in {7,8,9,10}:return None
+    if source_version not in {7,8,9,10,11}:return None
     old_status=str(result.get("status",""))
     result["algo_version"]=ALGO_VERSION
     if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result
@@ -573,6 +662,8 @@ def restore_verified_recovery(stored,path):
     for line in source.read_text(encoding="utf-8",errors="ignore").splitlines():
         try:record=json.loads(line)
         except Exception:continue
+        record=migrate_checkpoint_row(record)
+        if not record or record.get("algo_version")!=ALGO_VERSION:continue
         key=(str(record.get("name","")).strip(),str(record.get("category","")).strip())
         current=stored.get(key)
         if str(record.get("status",""))=="VERIFIED" and stored_candidate_still_safe(record) and (not current or str(current.get("status",""))!="VERIFIED"):
@@ -583,12 +674,32 @@ def excel_safe_frame(frame):
     for col in safe.columns:
         safe[col]=safe[col].map(lambda v: ILLEGAL_CHARACTERS_RE.sub("",v)[:32767] if isinstance(v,str) else v)
     return safe
+def write_contact_partition(frame,out,name):
+    frame.to_csv(out/f"contacts_{name}.csv",index=False,encoding="utf-8-sig")
+    excel_safe_frame(frame).to_excel(out/f"contacts_{name}.xlsx",index=False)
+def persist_remote_checkpoint():
+    if not PERSIST_COMMAND:return
+    try:
+        completed=subprocess.run(PERSIST_COMMAND,shell=True,timeout=180,check=False,text=True,capture_output=True)
+        print(f"PERIODIC_PERSIST exit={completed.returncode} {completed.stdout[-300:]}",flush=True)
+        if completed.returncode:print(f"PERIODIC_PERSIST_WARNING {completed.stderr[-300:]}",flush=True)
+    except Exception as exc:print(f"PERIODIC_PERSIST_WARNING {type(exc).__name__}: {str(exc)[:200]}",flush=True)
 def main():
+    global PROCESSED_THIS_RUN,VERIFIED_THIS_RUN
     parser=argparse.ArgumentParser(); parser.add_argument("input"); parser.add_argument("--out",default="output"); parser.add_argument("--resume",action="store_true"); parser.add_argument("--export-only",action="store_true"); parser.add_argument("--max-targets",type=int,default=int(os.getenv("MAX_TARGETS_PER_RUN","10000"))); args=parser.parse_args(); out=Path(args.out); out.mkdir(parents=True,exist_ok=True); checkpoint=out/"checkpoint.jsonl"; stored={}
     if args.resume and checkpoint.exists():
+        raw_records=[]
         for line in checkpoint.read_text(encoding="utf-8",errors="ignore").splitlines():
-            try: result=migrate_checkpoint_row(json.loads(line))
-            except Exception: continue
+            try:raw_records.append(json.loads(line))
+            except Exception:continue
+        email_fanout={}
+        for raw in raw_records:
+            email=norm_email(str(raw.get("email","")))
+            if email:email_fanout[email]=email_fanout.get(email,0)+1
+        for raw in raw_records:
+            raw["shared_target_count"]=email_fanout.get(norm_email(str(raw.get("email",""))),1)
+            try:result=migrate_checkpoint_row(raw)
+            except Exception:continue
             if result and result.get("algo_version")==ALGO_VERSION: stored[(result.get("name",""),result.get("category",""))]=result
     rows=load_input(args.input); stored=retain_active_checkpoint(stored,rows,out); stored=restore_verified_recovery(stored,out/"recovered_verified.jsonl"); checkpoint.write_text("".join(json.dumps(r,ensure_ascii=False)+"\n" for r in stored.values()),encoding="utf-8")
     if not args.export_only:
@@ -596,6 +707,7 @@ def main():
             queue=build_research_queue(rows,stored,datetime.now(timezone.utc),args.max_targets)
             print(f"Research queue={len(queue)} workers={RESEARCH_WORKERS} search_limit={SEARCH_CALL_LIMIT} backends={SEARCH_BACKENDS}",flush=True)
             row_iter=iter(enumerate(queue,1)); in_flight={}
+            last_persist=time.monotonic()
             with concurrent.futures.ThreadPoolExecutor(max_workers=RESEARCH_WORKERS) as pool:
                 def submit_next():
                     if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:return False
@@ -615,6 +727,10 @@ def main():
                             print(f"TARGET_WARNING {key[0]} {type(exc).__name__}: {str(exc)[:160]}",flush=True)
                             continue
                         stored[key]=result; stream.write(json.dumps(result,ensure_ascii=False)+"\n"); stream.flush()
+                        PROCESSED_THIS_RUN+=1
+                        if result.get("status")=="VERIFIED":VERIFIED_THIS_RUN+=1
+                        if PERSIST_COMMAND and (PROCESSED_THIS_RUN%PERSIST_EVERY_TARGETS==0 or time.monotonic()-last_persist>=PERSIST_EVERY_SECONDS):
+                            persist_remote_checkpoint(); last_persist=time.monotonic()
                         submit_next()
             if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:
                 print(f"Stopping shift safely after {len(queue)-len(list(row_iter))} scheduled targets and {SEARCH_CALLS} search calls",flush=True)
@@ -622,7 +738,13 @@ def main():
     if frame.empty:return
     frame=frame.sort_values(["priority","status","confidence"],ascending=[True,True,False]).drop_duplicates(subset=["name","category"],keep="first"); expanded=annotate_shared_contacts(expand_verified_contacts(frame))
     frame.to_csv(out/"audit.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(frame).to_excel(out/"audit.xlsx",index=False)
-    found=expanded[expanded.send_eligible].sort_values(["priority","confidence"],ascending=[True,False]).drop_duplicates(subset=["email"],keep="first") if not expanded.empty else pd.DataFrame(columns=list(frame.columns)+["candidate_rank"]); found.to_csv(out/"contacts.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(found).to_excel(out/"contacts.xlsx",index=False); excel_safe_frame(frame[frame.status.str.startswith("REVIEW")]).to_excel(out/"review.xlsx",index=False)
+    found=expanded[expanded.send_eligible].sort_values(["priority","confidence"],ascending=[True,False]).drop_duplicates(subset=["email"],keep="first") if not expanded.empty else pd.DataFrame(columns=list(frame.columns)+["candidate_rank"]); found.to_csv(out/"contacts.csv",index=False,encoding="utf-8-sig"); excel_safe_frame(found).to_excel(out/"contacts.xlsx",index=False)
+    personal=found[found.outreach_scope=="PERSON"].copy() if not found.empty else found.copy()
+    organization=found[found.outreach_scope=="ORGANIZATION_OR_SHARED_ROUTE"].copy() if not found.empty else found.copy()
+    shared=found[found.shared_contact==True].copy() if not found.empty else found.copy()
+    write_contact_partition(personal,out,"personal"); write_contact_partition(organization,out,"organization"); write_contact_partition(shared,out,"shared")
+    excel_safe_frame(frame[frame.status.str.startswith("REVIEW")]).to_excel(out/"review.xlsx",index=False)
     shared_rows=int(found.shared_contact.sum()) if not found.empty else 0
-    summary={"algo_version":ALGO_VERSION,"physician_search_version":PHYSICIAN_SEARCH_VERSION,"touched_targets":len(frame),"resolved_targets":int((~frame.status.str.startswith("PENDING")).sum()),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"pending":int(frame.status.str.startswith("PENDING").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"personalization_safe_emails":int(found.personalization_safe.sum()) if not found.empty else 0,"organization_or_shared_routes":int((found.outreach_scope=="ORGANIZATION_OR_SHARED_ROUTE").sum()) if not found.empty else 0,"shared_route_rows":shared_rows,"search_calls":SEARCH_CALLS,"search_circuit_open":SEARCH_CIRCUIT_OPEN,"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
+    fanout=expanded.groupby("email").size() if not expanded.empty else pd.Series(dtype=int)
+    summary={"algo_version":ALGO_VERSION,"physician_search_version":PHYSICIAN_SEARCH_VERSION,"touched_targets":len(frame),"resolved_targets":int((~frame.status.str.startswith("PENDING")).sum()),"verified":int((frame.status=="VERIFIED").sum()),"not_verified":int((frame.status=="NO_VERIFIED_PUBLIC_EMAIL").sum()),"pending":int(frame.status.str.startswith("PENDING").sum()),"review":int(frame.status.str.startswith("REVIEW").sum()),"unique_emails":int(found.email.nunique()),"personal_unique_emails":int(personal.email.nunique()) if not personal.empty else 0,"organization_unique_emails":int(organization.email.nunique()) if not organization.empty else 0,"shared_unique_emails":int(shared.email.nunique()) if not shared.empty else 0,"max_email_target_fanout":int(fanout.max()) if not fanout.empty else 0,"emails_with_fanout_over_5":int((fanout>5).sum()) if not fanout.empty else 0,"personalization_safe_emails":int(found.personalization_safe.sum()) if not found.empty else 0,"organization_or_shared_routes":int((found.outreach_scope=="ORGANIZATION_OR_SHARED_ROUTE").sum()) if not found.empty else 0,"shared_route_rows":shared_rows,"processed_this_run":PROCESSED_THIS_RUN,"verified_this_run":VERIFIED_THIS_RUN,"elapsed_seconds":round(time.monotonic()-RUN_STARTED_AT,1),"search_calls":SEARCH_CALLS,"search_circuit_open":SEARCH_CIRCUIT_OPEN,"provider_stats":PROVIDER_STATS,"http_stats":HTTP_STATS,"by_category":frame.groupby("category").status.value_counts().unstack(fill_value=0).to_dict("index")}; (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8"); print(json.dumps(summary,ensure_ascii=False,indent=2))
 if __name__=="__main__": main()
