@@ -2,19 +2,19 @@
   "algo_version": 12,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 923,
-  "verified": 919,
+  "resolved_targets": 924,
+  "verified": 920,
   "not_verified": 4,
-  "pending": 6271,
+  "pending": 6270,
   "review": 0,
   "unique_emails": 563,
-  "personal_unique_emails": 114,
-  "organization_unique_emails": 449,
-  "shared_unique_emails": 252,
+  "personal_unique_emails": 113,
+  "organization_unique_emails": 450,
+  "shared_unique_emails": 253,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 17,
-  "personalization_safe_emails": 114,
-  "organization_or_shared_routes": 449,
+  "personalization_safe_emails": 113,
+  "organization_or_shared_routes": 450,
   "direct_emails": 478,
   "institutional_emails": 74,
   "by_category": {
@@ -183,8 +183,8 @@
     "sleep_consultant": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 4,
-      "VERIFIED": 10
+      "PENDING_SEARCH_PROVIDER": 3,
+      "VERIFIED": 11
     },
     "sperm_bank": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
