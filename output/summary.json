@@ -2,21 +2,21 @@
   "algo_version": 12,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 930,
-  "verified": 921,
+  "resolved_targets": 931,
+  "verified": 922,
   "not_verified": 9,
-  "pending": 6264,
+  "pending": 6263,
   "review": 0,
-  "unique_emails": 564,
+  "unique_emails": 565,
   "personal_unique_emails": 114,
-  "organization_unique_emails": 450,
+  "organization_unique_emails": 451,
   "shared_unique_emails": 253,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 17,
   "personalization_safe_emails": 114,
-  "organization_or_shared_routes": 450,
+  "organization_or_shared_routes": 451,
   "direct_emails": 478,
-  "institutional_emails": 74,
+  "institutional_emails": 75,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -81,8 +81,8 @@
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
       "PENDING_ALGO_UPGRADE": 14,
-      "PENDING_SEARCH_PROVIDER": 3474,
-      "VERIFIED": 79
+      "PENDING_SEARCH_PROVIDER": 3473,
+      "VERIFIED": 80
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
