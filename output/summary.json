@@ -2,10 +2,10 @@
   "algo_version": 12,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 926,
+  "resolved_targets": 927,
   "verified": 920,
-  "not_verified": 6,
-  "pending": 6268,
+  "not_verified": 7,
+  "pending": 6267,
   "review": 0,
   "unique_emails": 563,
   "personal_unique_emails": 113,
@@ -37,9 +37,9 @@
       "VERIFIED": 5
     },
     "clinic_manager": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "NO_VERIFIED_PUBLIC_EMAIL": 1,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 49,
+      "PENDING_SEARCH_PROVIDER": 48,
       "VERIFIED": 1
     },
     "community_clinic": {
