@@ -2,10 +2,10 @@
   "algo_version": 12,
   "total_targets": 7194,
   "touched_targets": 7194,
-  "resolved_targets": 924,
+  "resolved_targets": 925,
   "verified": 920,
-  "not_verified": 4,
-  "pending": 6270,
+  "not_verified": 5,
+  "pending": 6269,
   "review": 0,
   "unique_emails": 563,
   "personal_unique_emails": 113,
@@ -175,9 +175,9 @@
       "VERIFIED": 8
     },
     "pregnancy_podcast": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "NO_VERIFIED_PUBLIC_EMAIL": 1,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 17,
+      "PENDING_SEARCH_PROVIDER": 16,
       "VERIFIED": 3
     },
     "sleep_consultant": {
