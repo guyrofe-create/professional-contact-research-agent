@@ -80,8 +80,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 288,
-      "PENDING_SEARCH_PROVIDER": 3200,
+      "PENDING_ALGO_UPGRADE": 238,
+      "PENDING_SEARCH_PROVIDER": 3250,
       "VERIFIED": 79
     },
     "fertility_association": {
