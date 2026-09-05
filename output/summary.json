@@ -26,8 +26,8 @@
     },
     "childbirth_educator": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 10,
+      "PENDING_ALGO_UPGRADE": 1,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 9
     },
     "childbirth_school": {
@@ -80,8 +80,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 3488,
+      "PENDING_ALGO_UPGRADE": 14,
+      "PENDING_SEARCH_PROVIDER": 3474,
       "VERIFIED": 79
     },
     "fertility_association": {
@@ -104,8 +104,8 @@
     },
     "fertility_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 10,
+      "PENDING_ALGO_UPGRADE": 1,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 10
     },
     "fertility_nurse": {
@@ -122,8 +122,8 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 33,
-      "PENDING_SEARCH_PROVIDER": 2115,
+      "PENDING_ALGO_UPGRADE": 67,
+      "PENDING_SEARCH_PROVIDER": 2081,
       "VERIFIED": 198
     },
     "ivf_unit": {
