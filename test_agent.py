@@ -31,19 +31,29 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual(migrated["status"],"VERIFIED")
         self.assertEqual(migrated["physician_search_version"],agent.PHYSICIAN_SEARCH_VERSION)
 
-    def test_physician_without_candidate_remains_retryable(self):
+    def test_physician_without_candidate_remains_retryable_before_limit(self):
         row={"name":"דנה לוי","category":"gynecologist","seed_source":""}
-        with patch.object(agent,"search_web",return_value=iter([])):
+        def empty_search(*args, **kwargs):
+            kwargs["state"].update({"queries": 4, "errors": 0, "results": 0, "provider": "fake", "circuit_open": False, "result_urls": []})
+            return iter([])
+        with patch.object(agent,"search_web",side_effect=empty_search):
             result=agent.research(row)
         self.assertEqual(result["status"],"PENDING_SEARCH_PROVIDER")
+        self.assertEqual(result["resolution_reason"],"retry_scheduled")
 
-    def test_family_doctor_search_uses_exact_name_only(self):
-        self.assertEqual(['"ד״ר דוד כהן"'], agent.search_queries("ד״ר דוד כהן", "family_doctor"))
-
-    def test_all_doctor_searches_use_exact_name_only(self):
+    def test_all_doctor_searches_start_with_exact_name_then_target_hmo_and_contact_pages(self):
         for category in ("family_doctor", "gynecologist", "fertility_doctor"):
             with self.subTest(category=category):
-                self.assertEqual(['"ד״ר דוד כהן"'], agent.search_queries("ד״ר דוד כהן", category))
+                queries=agent.search_queries("ד״ר דוד כהן", category)
+                self.assertEqual('"ד״ר דוד כהן"', queries[0])
+                self.assertTrue(any("site:clalit.co.il" in query and "site:maccabi4u.co.il" in query for query in queries))
+                self.assertTrue(any("צור קשר" in query and "email" in query for query in queries))
+
+    def test_clinic_manager_search_targets_role_hmo_and_contact_pages(self):
+        queries=agent.search_queries("דנה לוי", "clinic_manager")
+        self.assertTrue(any("מנהל מרפאה" in query for query in queries))
+        self.assertTrue(any("site:meuhedet.co.il" in query for query in queries))
+        self.assertTrue(any("דואר אלקטרוני" in query for query in queries))
 
     def test_family_doctor_hmo_clinic_route_email_is_accepted(self):
         score = agent.candidate_score(
@@ -307,6 +317,53 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual(3, len(queue))
         self.assertEqual({"gynecologist", "family_doctor"}, {queue[0]["category"], queue[1]["category"]})
 
+    def test_queue_prioritizes_requested_contact_categories(self):
+        rows = [
+            {"name": "יעל ישראלי", "category": "doula", "seed_source": "https://yael.example.co.il"},
+            {"name": "דוד כהן", "category": "family_doctor"},
+            {"name": "שרה לוי", "category": "gynecologist"},
+            {"name": "נועה רז מנהלת מרפאה", "category": "clinic_manager"},
+        ]
+        queue = agent.build_research_queue(rows, {}, datetime.now(timezone.utc), 3)
+        self.assertEqual(set(agent.PRIMARY_CONTACT_CATEGORIES), {row["category"] for row in queue})
+
+    def test_queue_respects_retry_time_instead_of_forcing_deferred_work(self):
+        row = {"name": "דוד כהן", "category": "family_doctor"}
+        stored = {("דוד כהן", "family_doctor"): {
+            "status": "PENDING_SEARCH_PROVIDER", "search_queries": 4,
+            "next_retry_at": "2099-01-01T00:00:00+00:00",
+        }}
+        self.assertEqual([], agent.build_research_queue([row], stored, datetime.now(timezone.utc), 10))
+
+    def test_physician_search_becomes_terminal_after_bounded_attempts(self):
+        row = {
+            "name": "דנה לוי", "category": "gynecologist", "seed_source": "",
+            "retry_count": agent.MAX_RESEARCH_ATTEMPTS - 1,
+        }
+        def empty_search(*args, **kwargs):
+            kwargs["state"].update({"queries": 4, "errors": 0, "results": 0, "provider": "fake", "circuit_open": False, "result_urls": []})
+            return iter([])
+        with patch.object(agent, "search_web", side_effect=empty_search):
+            result = agent.research(row)
+        self.assertEqual("NO_VERIFIED_PUBLIC_EMAIL", result["status"])
+        self.assertEqual("exhausted_search_attempts", result["resolution_reason"])
+
+    def test_repeated_identical_search_results_finish_early(self):
+        hit = {"url": "https://clinic.example.co.il/dr-levy", "title": "דנה לוי רופאת נשים", "snippet": "", "query": '"דנה לוי"', "seed": False}
+        row = {
+            "name": "דנה לוי", "category": "gynecologist", "seed_source": "",
+            "retry_count": 1, "unchanged_search_count": agent.MAX_UNCHANGED_SEARCHES - 1,
+            "previous_search_fingerprint": f'{agent.zlib.crc32(hit["url"].encode("utf-8")) & 0xffffffff:08x}',
+        }
+        def fake_search(*args, **kwargs):
+            kwargs["state"].update({"queries": 1, "errors": 0, "results": 1, "provider": "fake", "circuit_open": False, "result_urls": [hit["url"]]})
+            return iter([hit])
+        html = "<html><head><title>דנה לוי רופאת נשים</title></head><body>דנה לוי מומחית בגינקולוגיה</body></html>"
+        with patch.object(agent, "search_web", side_effect=fake_search), patch.object(agent, "fetch", return_value=(hit["url"], html)):
+            result = agent.research(row)
+        self.assertEqual("NO_VERIFIED_PUBLIC_EMAIL", result["status"])
+        self.assertEqual("exhausted_search_attempts", result["resolution_reason"])
+
     def test_removed_targets_are_archived_not_counted_as_active(self):
         stored = {
             ("דוד כהן", "gynecologist"): {"name": "דוד כהן", "category": "gynecologist", "status": "VERIFIED"},
@@ -468,7 +525,15 @@ class IdentityValidationTests(unittest.TestCase):
         seed_targets.add(rows, "ועידת ישראל לרפואת משפחה 2024", "family_doctor", "https://example.org/conf", "web")
         seed_targets.add(rows, "רופא משפחה. יומן", "family_doctor", "https://example.org/book", "web")
         seed_targets.add(rows, "IVF הפריה חוץ גופית", "embryologist", "https://example.org/ivf", "web")
+        seed_targets.add(rows, "התמחות ברפואת משפחה", "family_doctor", "https://example.org/residency", "web")
+        seed_targets.add(rows, "ייעוץ רפואת ילדים", "family_doctor", "https://example.org/pediatrics", "web")
         self.assertEqual([], rows)
+
+    def test_named_clinic_manager_is_retained_but_generic_role_is_rejected(self):
+        rows = []
+        seed_targets.add(rows, "נועה רז מנהלת מרפאה", "clinic_manager", "https://clinic.example.co.il/team", "web")
+        seed_targets.add(rows, "מנהלת מרפאה מכבי", "clinic_manager", "https://clinic.example.co.il/", "web")
+        self.assertEqual(["נועה רז מנהלת מרפאה"], [row["name"] for row in rows])
 
 
 if __name__ == "__main__":

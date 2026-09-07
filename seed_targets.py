@@ -30,14 +30,17 @@ GENERIC_PERSON_TARGET_PHRASES = {
     "ועידה", "ועידת", "כנס", "רופאים פרטיים", "רופא משפחה פרטי", "יומן", "מאמר", "כתבה",
     "טיפול", "טיפולים", "פיזיותרפיה", "דיכאון", "פלטפורמת", "רשימה של", "יחידות",
     "הרשמה וקבלה", "קניה ומכירה", "אודות אתר", "בלוג", "מדריך", "מרכז רפואי",
+    "התמחות ברפואת משפחה", "להתמחות ברפואת משפחה", "ייעוץ רפואת ילדים", "קורס הכנה ללידה",
     "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
 }
+CLINIC_MANAGER_ROLE_PHRASES = {"מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי"}
 NON_NAME_TOKENS = {
     "ivf", "vbac", "israel", "ישראל", "אתר", "קורס", "קורסי", "לידה", "לידות",
     "הריון", "הנקה", "פוריות", "פריון", "הפריה", "גופית", "אמבריולוגיה", "אמבריולוג",
     "דולה", "דולות", "מיילדת", "מיילדות", "יועצת", "יועץ", "אחות", "פיזיותרפיה",
     "רצפת", "אגן", "רופא", "רופאת", "רופאים", "רפואה", "רפואי", "משפחה",
     "מרכז", "מרכזי", "יחידה", "יחידות", "מכון", "מרפאה", "מרפאת", "בית", "ספר",
+    "מנהל", "מנהלת", "התמחות", "להתמחות", "ייעוץ", "ילדים", "כללית", "מכבי", "מאוחדת", "לאומית",
     "pelvic", "floor", "doula", "midwife", "clinic", "center", "centre",
 }
 PERSON_CATEGORIES = {
@@ -77,7 +80,7 @@ DISCOVERY = {
     "women_health_creator": ["בלוג בריאות האישה הריון לידה ישראל"],
 }
 REGIONS = ("תל אביב", "ירושלים", "חיפה", "באר שבע", "אשדוד", "ראשון לציון", "פתח תקווה", "נתניה", "השרון", "הצפון", "הדרום", "השפלה")
-PRIORITY_A = {"gynecologist", "fertility_doctor", "ivf_unit", "fertility_center", "embryologist", "fertility_nurse", "fertility_consultant", "sperm_bank", "fertility_preservation", "fertility_association", "doula", "midwife", "childbirth_educator", "birth_center", "womens_health_center"}
+PRIORITY_A = {"gynecologist", "family_doctor", "clinic_manager", "fertility_doctor", "ivf_unit", "fertility_center", "embryologist", "fertility_nurse", "fertility_consultant", "sperm_bank", "fertility_preservation", "fertility_association", "doula", "midwife", "childbirth_educator", "birth_center", "womens_health_center"}
 PRIORITY_C = {"facebook_group_admin", "community_manager", "parenting_site", "pregnancy_podcast", "doula_school", "childbirth_school", "women_health_creator"}
 KNOWN = {
     "ivf_unit": ["יחידת IVF שיבא", "יחידת IVF איכילוב", "יחידת IVF הדסה", "יחידת IVF רמבם", "יחידת IVF סורוקה"],
@@ -106,7 +109,8 @@ def valid_person_target(name, category, source_type=""):
     if category not in PERSON_CATEGORIES:
         return True
     value=clean_name(name).lower()
-    if any(phrase in value for phrase in GENERIC_PERSON_TARGET_PHRASES):
+    rejected_phrases=GENERIC_PERSON_TARGET_PHRASES-(CLINIC_MANAGER_ROLE_PHRASES if category=="clinic_manager" else set())
+    if any(phrase in value for phrase in rejected_phrases):
         return False
     words=[word for word in re.split(r"[^\w\u0590-\u05ff]+",value) if len(word)>=2 and word not in {"דר","דוקטור","פרופ","פרופסור"}]
     plausible=[word for word in words if word not in NON_NAME_TOKENS]
