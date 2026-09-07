@@ -2,15 +2,15 @@
   "algo_version": 12,
   "total_targets": 7195,
   "touched_targets": 7195,
-  "resolved_targets": 936,
-  "verified": 924,
+  "resolved_targets": 937,
+  "verified": 925,
   "not_verified": 12,
-  "pending": 6259,
+  "pending": 6258,
   "review": 0,
   "unique_emails": 568,
   "personal_unique_emails": 114,
   "organization_unique_emails": 454,
-  "shared_unique_emails": 253,
+  "shared_unique_emails": 254,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 17,
   "personalization_safe_emails": 114,
@@ -123,8 +123,8 @@
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
       "PENDING_ALGO_UPGRADE": 66,
-      "PENDING_SEARCH_PROVIDER": 2080,
-      "VERIFIED": 200
+      "PENDING_SEARCH_PROVIDER": 2079,
+      "VERIFIED": 201
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,

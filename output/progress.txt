@@ -1,5 +1,5 @@
-completed=936
+completed=937
 touched=7195
-pending=6259
+pending=6258
 targets=7195
 algo_version=12
