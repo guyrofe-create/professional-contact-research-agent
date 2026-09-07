@@ -2,20 +2,20 @@
   "algo_version": 12,
   "total_targets": 7195,
   "touched_targets": 7195,
-  "resolved_targets": 935,
-  "verified": 923,
+  "resolved_targets": 936,
+  "verified": 924,
   "not_verified": 12,
-  "pending": 6260,
+  "pending": 6259,
   "review": 0,
-  "unique_emails": 565,
+  "unique_emails": 568,
   "personal_unique_emails": 114,
-  "organization_unique_emails": 451,
+  "organization_unique_emails": 454,
   "shared_unique_emails": 253,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 17,
   "personalization_safe_emails": 114,
-  "organization_or_shared_routes": 451,
-  "direct_emails": 478,
+  "organization_or_shared_routes": 454,
+  "direct_emails": 481,
   "institutional_emails": 75,
   "by_category": {
     "birth_center": {
@@ -45,8 +45,8 @@
     "community_clinic": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 116,
-      "VERIFIED": 14
+      "PENDING_SEARCH_PROVIDER": 115,
+      "VERIFIED": 15
     },
     "community_manager": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
