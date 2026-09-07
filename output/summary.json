@@ -2,10 +2,10 @@
   "algo_version": 12,
   "total_targets": 7195,
   "touched_targets": 7195,
-  "resolved_targets": 933,
+  "resolved_targets": 934,
   "verified": 923,
-  "not_verified": 10,
-  "pending": 6262,
+  "not_verified": 11,
+  "pending": 6261,
   "review": 0,
   "unique_emails": 565,
   "personal_unique_emails": 114,
@@ -133,9 +133,9 @@
       "VERIFIED": 3
     },
     "lactation": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "NO_VERIFIED_PUBLIC_EMAIL": 1,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 2,
+      "PENDING_SEARCH_PROVIDER": 1,
       "VERIFIED": 449
     },
     "midwife": {
