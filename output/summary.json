@@ -2,12 +2,12 @@
   "algo_version": 12,
   "total_targets": 7185,
   "touched_targets": 7185,
-  "resolved_targets": 978,
+  "resolved_targets": 1010,
   "verified": 921,
   "retired_verified_preserved": 4,
   "preserved_verified_total": 925,
-  "not_verified": 57,
-  "pending": 6207,
+  "not_verified": 89,
+  "pending": 6175,
   "review": 0,
   "unique_emails": 566,
   "personal_unique_emails": 114,
@@ -123,8 +123,8 @@
       "VERIFIED": 5
     },
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 34,
-      "PENDING_ALGO_UPGRADE": 32,
+      "NO_VERIFIED_PUBLIC_EMAIL": 66,
+      "PENDING_ALGO_UPGRADE": 0,
       "PENDING_SEARCH_PROVIDER": 2079,
       "VERIFIED": 201
     },
