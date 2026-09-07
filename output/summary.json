@@ -2,10 +2,10 @@
   "algo_version": 12,
   "total_targets": 7185,
   "touched_targets": 7185,
-  "resolved_targets": 832,
-  "verified": 820,
+  "resolved_targets": 833,
+  "verified": 821,
   "not_verified": 12,
-  "pending": 6353,
+  "pending": 6352,
   "review": 0,
   "unique_emails": 569,
   "personal_unique_emails": 115,
@@ -80,8 +80,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3458,
-      "PENDING_SEARCH_PROVIDER": 50,
+      "PENDING_ALGO_UPGRADE": 3434,
+      "PENDING_SEARCH_PROVIDER": 74,
       "VERIFIED": 57
     },
     "fertility_association": {
@@ -122,9 +122,9 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2171,
-      "PENDING_SEARCH_PROVIDER": 48,
-      "VERIFIED": 127
+      "PENDING_ALGO_UPGRADE": 2145,
+      "PENDING_SEARCH_PROVIDER": 73,
+      "VERIFIED": 128
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
