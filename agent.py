@@ -22,8 +22,9 @@ from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 ALGO_VERSION = 12
-PHYSICIAN_SEARCH_VERSION = 2
+PHYSICIAN_SEARCH_VERSION = 3
 PHYSICIAN_CATEGORIES = {"family_doctor", "gynecologist", "fertility_doctor"}
+PRIMARY_CONTACT_CATEGORIES = ("gynecologist", "family_doctor", "clinic_manager")
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
     r"(?ix)(?<![\w.+-])([a-z0-9._%+-]+)\s*(?:\[|\()?\s*(?:at|שטרודל)\s*(?:\]|\))?\s*"
@@ -67,8 +68,8 @@ ORGANIZATION_DOMAIN_GROUPS = (
 INVALID_TARGET_NAMES = {"ראשי", "אודות", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית"}
 CATEGORY_CONFIG = {
     "gynecologist": {"priority": "A", "terms": ["יילוד", "גינקולוג", "גניקולוג", "רופא נשים", "רפואת נשים", "גינקולוגיה", "גניקולוגיה", "מיילדות", "obstetric", "gynecolog", "ob/gyn", "obgyn"], "kind": "person"},
-    "family_doctor": {"priority": "B", "terms": ["רפואת משפחה", "רופא משפחה", "רופאת משפחה", "מומחה ברפואת המשפחה", "רפואה ראשונית", "family medicine", "family physician"], "kind": "person"},
-    "clinic_manager": {"priority": "B", "terms": ["מנהל מרפאה", "מנהלת מרפאה", "ניהול מרפאה", "medical director"], "kind": "person"},
+    "family_doctor": {"priority": "A", "terms": ["רפואת משפחה", "רופא משפחה", "רופאת משפחה", "מומחה ברפואת המשפחה", "רפואה ראשונית", "family medicine", "family physician"], "kind": "person"},
+    "clinic_manager": {"priority": "A", "terms": ["מנהל מרפאה", "מנהלת מרפאה", "ניהול מרפאה", "medical director"], "kind": "person"},
     "womens_health_center": {"priority": "A", "terms": ["מרכז בריאות האישה", "מרפאת נשים", "בריאות האישה", "women health"], "kind": "org"},
     "community_clinic": {"priority": "B", "terms": ["מרפאה קהילתית", "מרפאת משפחה", "מרכז רפואי", "רפואה ראשונית"], "kind": "org"},
     "fertility_doctor": {"priority": "A", "terms": ["פוריות", "פריון", "ivf", "שימור פוריות"], "kind": "person"}, "ivf_unit": {"priority": "A", "terms": ["ivf", "הפריה חוץ גופית", "יחידת פוריות"], "kind": "org"}, "fertility_center": {"priority": "A", "terms": ["מרכז פוריות", "מרפאת פוריות", "פריון"], "kind": "org"}, "embryologist": {"priority": "A", "terms": ["אמבריולוג", "embryologist", "ivf"], "kind": "person"}, "fertility_nurse": {"priority": "A", "terms": ["אחות פוריות", "אחות פריון", "ivf"], "kind": "person"}, "fertility_consultant": {"priority": "A", "terms": ["יועצת פוריות", "יועץ פוריות", "פריון"], "kind": "person"}, "sperm_bank": {"priority": "A", "terms": ["בנק זרע", "תרומת זרע"], "kind": "org"}, "fertility_preservation": {"priority": "A", "terms": ["שימור פוריות"], "kind": "org"}, "fertility_association": {"priority": "A", "terms": ["עמותת פוריות", "ארגון פוריות", "פריון"], "kind": "org"}, "doula": {"priority": "A", "terms": ["דולה", "doula", "תומכת לידה"], "kind": "person"}, "midwife": {"priority": "A", "terms": ["מיילדת", "midwife"], "kind": "person"}, "childbirth_educator": {"priority": "A", "terms": ["הכנה ללידה", "מדריכת לידה"], "kind": "person"}, "birth_center": {"priority": "A", "terms": ["מרכז לידה", "חדר לידה", "יולדות"], "kind": "org"}, "lactation": {"priority": "B", "terms": ["יועצת הנקה", "ibclc", "הנקה"], "kind": "person"}, "pelvic_floor": {"priority": "B", "terms": ["רצפת אגן", "פיזיותרפיה"], "kind": "person"}, "sleep_consultant": {"priority": "B", "terms": ["יועצת שינה", "ייעוץ שינה"], "kind": "person"}, "pregnancy_dietitian": {"priority": "B", "terms": ["דיאטנית", "תזונה", "הריון", "פוריות"], "kind": "person"}, "parenting_center": {"priority": "B", "terms": ["מרכז הורות", "הורים ותינוקות"], "kind": "org"}, "perinatal_mental_health": {"priority": "B", "terms": ["פסיכולוג", "טיפול רגשי", "הריון", "פוריות"], "kind": "person"}, "facebook_group_admin": {"priority": "C", "terms": ["קבוצת פייסבוק", "הריון", "פוריות"], "kind": "community"}, "community_manager": {"priority": "C", "terms": ["קהילה", "הריון", "פוריות"], "kind": "community"}, "parenting_site": {"priority": "C", "terms": ["הורות", "הריון", "לידה"], "kind": "org"}, "pregnancy_podcast": {"priority": "C", "terms": ["פודקאסט", "הריון", "פוריות"], "kind": "creator"}, "doula_school": {"priority": "C", "terms": ["בית ספר לדולות", "קורס דולות"], "kind": "org"}, "childbirth_school": {"priority": "C", "terms": ["הכנה ללידה", "קורס מדריכות"], "kind": "org"}, "women_health_creator": {"priority": "C", "terms": ["בריאות האישה", "הריון", "לידה"], "kind": "creator"}}
@@ -97,6 +98,8 @@ PERSIST_EVERY_SECONDS = max(60,int(os.getenv("PERSIST_EVERY_SECONDS","900")))
 PERSIST_COMMAND = os.getenv("PERSIST_CHECKPOINT_CMD","").strip()
 FETCH_CACHE_DB = os.getenv("FETCH_CACHE_DB","").strip()
 FETCH_CACHE_TTL = int(os.getenv("FETCH_CACHE_TTL","604800"))
+MAX_RESEARCH_ATTEMPTS = max(1, int(os.getenv("MAX_RESEARCH_ATTEMPTS", "4")))
+MAX_UNCHANGED_SEARCHES = max(1, int(os.getenv("MAX_UNCHANGED_SEARCHES", "2")))
 
 PERSON_ROLE_REJECT = {
     "sales", "marketing", "international", "logistics", "support", "customerservice",
@@ -106,14 +109,17 @@ GENERIC_PERSON_TARGET_PHRASES = {
     "ועידה", "ועידת", "כנס", "רופאים פרטיים", "רופא משפחה פרטי", "יומן", "מאמר", "כתבה",
     "טיפול", "טיפולים", "פיזיותרפיה", "דיכאון", "פלטפורמת", "רשימה של", "יחידות",
     "הרשמה וקבלה", "קניה ומכירה", "אודות אתר", "בלוג", "מדריך", "מרכז רפואי",
+    "התמחות ברפואת משפחה", "להתמחות ברפואת משפחה", "ייעוץ רפואת ילדים", "קורס הכנה ללידה",
     "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
 }
+CLINIC_MANAGER_ROLE_PHRASES = {"מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי"}
 NON_NAME_TOKENS = {
     "ivf", "vbac", "israel", "ישראל", "אתר", "קורס", "קורסי", "לידה", "לידות",
     "הריון", "הנקה", "פוריות", "פריון", "הפריה", "גופית", "אמבריולוגיה", "אמבריולוג",
     "דולה", "דולות", "מיילדת", "מיילדות", "יועצת", "יועץ", "אחות", "פיזיותרפיה",
     "רצפת", "אגן", "רופא", "רופאת", "רופאים", "רפואה", "רפואי", "משפחה",
     "מרכז", "מרכזי", "יחידה", "יחידות", "מכון", "מרפאה", "מרפאת", "בית", "ספר",
+    "מנהל", "מנהלת", "התמחות", "להתמחות", "ייעוץ", "ילדים", "כללית", "מכבי", "מאוחדת", "לאומית",
     "pelvic", "floor", "doula", "midwife", "clinic", "center", "centre",
 }
 
@@ -210,7 +216,8 @@ def role_address(email):
 def forbidden_person_role(email): return normalized_local(email) in PERSON_ROLE_REJECT
 def valid_person_target_name(name,category=""):
     value=norm(name)
-    if not value or any(norm(phrase) in value for phrase in GENERIC_PERSON_TARGET_PHRASES):return False
+    rejected_phrases=GENERIC_PERSON_TARGET_PHRASES-(CLINIC_MANAGER_ROLE_PHRASES if category=="clinic_manager" else set())
+    if not value or any(norm(phrase) in value for phrase in rejected_phrases):return False
     words=tokens(name)
     plausible=[word for word in words if word not in NON_NAME_TOKENS]
     return 2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in str(name) for char in ("?", "!", "@"))
@@ -218,9 +225,20 @@ def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
     search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
     if category in PHYSICIAN_CATEGORIES:
-        # A physician's exact name alone gives the search provider the widest
-        # chance to surface an official personal, clinic, hospital, or HMO page.
-        return [quoted]
+        # Start with the exact physician name, then deliberately look for an
+        # identity page at an HMO/clinic and for a personal contact page.
+        return list(dict.fromkeys([
+            quoted,
+            f'{quoted} {profession}',
+            f'{quoted} (site:clalit.co.il OR site:maccabi4u.co.il OR site:meuhedet.co.il OR site:leumit.co.il)',
+            f'{quoted} ("צור קשר" OR "דואר אלקטרוני" OR email)',
+        ]))
+    if category=="clinic_manager":
+        return [
+            f'{quoted} ("מנהל מרפאה" OR "מנהלת מרפאה" OR "מנהל רפואי")',
+            f'{quoted} (site:clalit.co.il OR site:maccabi4u.co.il OR site:meuhedet.co.il OR site:leumit.co.il)',
+            f'{quoted} ("צור קשר" OR "דואר אלקטרוני" OR email)',
+        ]
     queries=[f'{quoted} {profession}',f'{quoted} מייל',f'{quoted} email']
     if category in {"doula","midwife","childbirth_educator"}:
         queries += [f'{quoted} אתר רשמי צור קשר',f'{quoted} אינדקס']
@@ -298,7 +316,7 @@ def _search_once(query,max_results):
     return [],"+".join(providers) or "ddgs:empty"
 def search_web(name,category,license_number="",max_results=10,state=None):
     global SEARCH_CONSECUTIVE_FAILURES,SEARCH_CIRCUIT_OPEN
-    state=state if state is not None else {}; state.update({"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False})
+    state=state if state is not None else {}; state.update({"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"result_urls":[]})
     if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:
         state["circuit_open"]=True; return
     seen=set()
@@ -326,7 +344,7 @@ def search_web(name,category,license_number="",max_results=10,state=None):
         for result in results:
             url=result.get("href") or result.get("url") or ""; title=result.get("title",""); snippet=result.get("body","")
             if url in seen or blocked_url(url) or not name_match(name,title+" "+snippet):continue
-            seen.add(url); state["results"]+=1; yield {"url":url,"title":title,"snippet":snippet,"query":query,"seed":False}
+            seen.add(url); state["results"]+=1; state["result_urls"].append(url); yield {"url":url,"title":title,"snippet":snippet,"query":query,"seed":False}
         # Non-physician categories deliberately continue to their next query
         # unless the caller stops after finding a verified address.
 def fetch(url):
@@ -563,16 +581,23 @@ def research(row):
     candidates=ranked_candidates(candidates)
     if candidates:
         score,email,source,evidence,query,method,identity_url=candidates[0]; alternates=[serialized_candidate(x) for x in candidates[1:3]]; return base|{"email":email,"email_type":classify(email,category),"confidence":score,"source_url":source,"identity_url":identity_url,"status":"VERIFIED","evidence":evidence,"matched_query":query,"extraction_method":method,"alternate_emails":json.dumps(alternates,ensure_ascii=False),"candidate_count":len(candidates),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False),"last_attempt_at":datetime.now(timezone.utc).isoformat()}
-    # Zero search results is inconclusive. It must remain retryable instead of
-    # being permanently recorded as "no public email".
-    # A single exact-name result set cannot prove that a physician has no
-    # public route. Keep physicians retryable so later engines/index changes
-    # can still surface an official personal, clinic, hospital, or HMO page.
-    pending=(category in PHYSICIAN_CATEGORIES) or search_state.get("circuit_open") or search_state.get("results",0)==0 or (search_state.get("results",0)>0 and search_state.get("pages_fetched",0)==0)
-    retry_count=int(row.get("retry_count",0) or 0)+(1 if pending else 0)
+    result_urls=sorted(set(search_state.get("result_urls",[])))
+    fingerprint=f'{zlib.crc32(chr(10).join(result_urls).encode("utf-8")) & 0xffffffff:08x}'
+    previous_fingerprint=str(row.get("previous_search_fingerprint","") or "")
+    unchanged_count=int(row.get("unchanged_search_count",0) or 0)+(1 if previous_fingerprint==fingerprint and search_state.get("pages_fetched",0)>0 else 0)
+    provider_blocked=bool(
+        search_state.get("circuit_open")
+        or search_state.get("queries",0)==0
+        or (search_state.get("errors",0)>=search_state.get("queries",0) and search_state.get("results",0)==0)
+        or (search_state.get("results",0)>0 and search_state.get("pages_fetched",0)==0)
+    )
+    retry_count=int(row.get("retry_count",0) or 0)+(0 if provider_blocked else 1)
+    exhausted=retry_count>=MAX_RESEARCH_ATTEMPTS or unchanged_count>=MAX_UNCHANGED_SEARCHES
+    pending=provider_blocked or not exhausted
     next_retry=(datetime.now(timezone.utc)+timedelta(hours=min(72,6*(2**min(retry_count,3))))).isoformat() if pending else ""
     status="PENDING_SEARCH_PROVIDER" if pending else "NO_VERIFIED_PUBLIC_EMAIL"
-    return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":status,"evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"retry_count":retry_count,"next_retry_at":next_retry,"last_attempt_at":datetime.now(timezone.utc).isoformat(),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
+    reason="provider_unavailable" if provider_blocked else "exhausted_search_attempts" if exhausted else "retry_scheduled"
+    return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":status,"resolution_reason":reason,"evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"retry_count":retry_count,"unchanged_search_count":unchanged_count,"search_fingerprint":fingerprint,"next_retry_at":next_retry,"last_attempt_at":datetime.now(timezone.utc).isoformat(),"search_queries":search_state.get("queries",0),"search_errors":search_state.get("errors",0),"search_results":search_state.get("results",0),"pages_fetched":search_state.get("pages_fetched",0),"fetch_failures":search_state.get("fetch_failures",0),"search_provider":search_state.get("provider",""),"attempted_urls":json.dumps(list(dict.fromkeys(attempts)),ensure_ascii=False)}
 
 def stored_candidate_still_safe(record):
     if str(record.get("status",""))!="VERIFIED":return False
@@ -627,6 +652,9 @@ def round_robin_rows(rows):
         categories=remaining
     return result
 
+def category_scope_rows(rows,primary=True):
+    return [row for row in rows if (str(row.get("category","")) in PRIMARY_CONTACT_CATEGORIES)==primary]
+
 def build_research_queue(rows,stored,now,max_targets):
     direct,fresh,due,deferred=[],[],[],[]
     for row in rows:
@@ -634,7 +662,7 @@ def build_research_queue(rows,stored,now,max_targets):
         if previous and not str(previous.get("status","")).startswith("PENDING_"):continue
         if not previous:
             (direct if usable_identity_seed(str(row.get("seed_source","")).strip()) else fresh).append(row); continue
-        candidate=dict(row)|{"retry_count":previous.get("retry_count",0),"previous_search_queries":previous.get("search_queries",0),"last_attempt_at":previous.get("last_attempt_at","")}
+        candidate=dict(row)|{"retry_count":previous.get("retry_count",0),"previous_search_queries":previous.get("search_queries",0),"previous_search_fingerprint":previous.get("search_fingerprint",""),"unchanged_search_count":previous.get("unchanged_search_count",0),"last_attempt_at":previous.get("last_attempt_at","")}
         # Rows never searched because the old circuit was open are genuinely untouched.
         if int(previous.get("search_queries",0) or 0)==0:
             due.append(candidate); continue
@@ -642,11 +670,14 @@ def build_research_queue(rows,stored,now,max_targets):
         except (ValueError,TypeError):retry_at=now
         (due if retry_at<=now else deferred).append(candidate if retry_at<=now else (retry_at,candidate))
     due.sort(key=lambda row:(int(row.get("retry_count",0) or 0),str(row.get("last_attempt_at",""))))
-    fresh_queue=round_robin_rows(direct)+round_robin_rows(fresh)
-    due_queue=round_robin_rows(due)
+    fresh_queue=(
+        round_robin_rows(category_scope_rows(direct))
+        + round_robin_rows(category_scope_rows(fresh))
+        + round_robin_rows(category_scope_rows(direct,False))
+        + round_robin_rows(category_scope_rows(fresh,False))
+    )
+    due_queue=round_robin_rows(category_scope_rows(due))+round_robin_rows(category_scope_rows(due,False))
     queue=(fresh_queue+due_queue)[:max_targets]
-    if not queue and deferred:
-        deferred.sort(key=lambda item:item[0]); queue=[row for _,row in deferred[:min(250,max_targets)]]
     return queue
 def load_input(path):
     source=Path(path); frame=pd.read_excel(source) if source.suffix.lower()==".xlsx" else pd.read_csv(source); return frame.fillna("").to_dict("records")

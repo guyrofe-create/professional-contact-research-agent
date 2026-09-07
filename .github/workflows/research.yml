@@ -90,6 +90,8 @@ jobs:
           PERSIST_CHECKPOINT_CMD: python persist_progress.py
           FETCH_CACHE_DB: .cache/http/pages.sqlite3
           FETCH_CACHE_TTL: 604800
+          MAX_RESEARCH_ATTEMPTS: 4
+          MAX_UNCHANGED_SEARCHES: 2
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: |
           mkdir -p output
