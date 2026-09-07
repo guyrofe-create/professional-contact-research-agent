@@ -2,21 +2,23 @@
   "algo_version": 12,
   "total_targets": 7185,
   "touched_targets": 7185,
-  "resolved_targets": 833,
-  "verified": 821,
+  "resolved_targets": 933,
+  "verified": 921,
+  "retired_verified_preserved": 4,
+  "preserved_verified_total": 925,
   "not_verified": 12,
-  "pending": 6352,
+  "pending": 6252,
   "review": 0,
-  "unique_emails": 569,
-  "personal_unique_emails": 115,
-  "organization_unique_emails": 454,
-  "shared_unique_emails": 250,
+  "unique_emails": 566,
+  "personal_unique_emails": 114,
+  "organization_unique_emails": 452,
+  "shared_unique_emails": 253,
   "max_email_target_fanout": 229,
-  "emails_with_fanout_over_5": 9,
-  "personalization_safe_emails": 115,
-  "organization_or_shared_routes": 454,
+  "emails_with_fanout_over_5": 17,
+  "personalization_safe_emails": 114,
+  "organization_or_shared_routes": 452,
   "direct_emails": 480,
-  "institutional_emails": 77,
+  "institutional_emails": 74,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -80,9 +82,9 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3184,
-      "PENDING_SEARCH_PROVIDER": 324,
-      "VERIFIED": 57
+      "PENDING_ALGO_UPGRADE": 3195,
+      "PENDING_SEARCH_PROVIDER": 290,
+      "VERIFIED": 80
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -104,9 +106,9 @@
     },
     "fertility_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 14,
+      "PENDING_ALGO_UPGRADE": 10,
       "PENDING_SEARCH_PROVIDER": 0,
-      "VERIFIED": 6
+      "VERIFIED": 10
     },
     "fertility_nurse": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -122,9 +124,9 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 1895,
-      "PENDING_SEARCH_PROVIDER": 323,
-      "VERIFIED": 128
+      "PENDING_ALGO_UPGRADE": 1960,
+      "PENDING_SEARCH_PROVIDER": 185,
+      "VERIFIED": 201
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,

@@ -619,10 +619,12 @@ def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:
         if result.get("category") not in PHYSICIAN_CATEGORIES or int(result.get("physician_search_version",0) or 0)>=PHYSICIAN_SEARCH_VERSION:return result
-        # Never discard a previously verified candidate merely because the
-        # search strategy changed. Re-search only unsafe or unresolved rows.
-        if str(result.get("status",""))=="VERIFIED" and stored_candidate_still_safe(result):
+        # A search-strategy upgrade must never demote or discard a previously
+        # verified address. Existing export safety rules may still keep a
+        # questionable/shared route out of send-eligible contact lists.
+        if str(result.get("status",""))=="VERIFIED":
             result["physician_search_version"]=PHYSICIAN_SEARCH_VERSION
+            result["verification_review_required"]=not stored_candidate_still_safe(result)
             return result
         result.update({"physician_search_version":PHYSICIAN_SEARCH_VERSION,"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
         return result
