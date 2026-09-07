@@ -426,9 +426,10 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual("info@harechem.com", agent.norm_email("%20info@harechem.com"))
         self.assertTrue(agent.valid_email(agent.norm_email("%20info@harechem.com")))
 
-    def test_shared_role_address_is_rechecked_on_migration(self):
+    def test_shared_role_address_is_preserved_but_flagged_on_search_upgrade(self):
         old = {
-            "algo_version": 11, "name": "דוד כהן", "category": "gynecologist",
+            "algo_version": agent.ALGO_VERSION, "physician_search_version": agent.PHYSICIAN_SEARCH_VERSION - 1,
+            "name": "דוד כהן", "category": "gynecologist",
             "status": "VERIFIED", "email": "clinic@hospital.org.il",
             "source_url": "https://hospital.org.il/doctors/dr-cohen",
             "identity_url": "https://hospital.org.il/doctors/dr-cohen",
@@ -437,8 +438,9 @@ class IdentityValidationTests(unittest.TestCase):
         }
         migrated = agent.migrate_checkpoint_row(old)
         self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
-        self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
-        self.assertIn("clinic@hospital.org.il", migrated["previous_candidate"])
+        self.assertEqual("VERIFIED", migrated["status"])
+        self.assertTrue(migrated["verification_review_required"])
+        self.assertEqual("clinic@hospital.org.il", migrated["email"])
 
     def test_non_physician_search_keeps_trying_after_unusable_hits(self):
         calls = []

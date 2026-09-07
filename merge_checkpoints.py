@@ -46,7 +46,7 @@ def combine(left, right):
                 seen.add(marker)
                 combined.append(item)
         result[field] = json.dumps(combined, ensure_ascii=False)
-    for field in ("search_queries", "search_errors", "search_results", "pages_fetched", "fetch_failures", "retry_count"):
+    for field in ("search_queries", "search_errors", "search_results", "pages_fetched", "fetch_failures", "retry_count", "unchanged_search_count"):
         result[field] = max(int(left.get(field, 0) or 0), int(right.get(field, 0) or 0))
     result["merged_checkpoint_rows"] = int(left.get("merged_checkpoint_rows", 1) or 1) + int(right.get("merged_checkpoint_rows", 1) or 1)
     return result

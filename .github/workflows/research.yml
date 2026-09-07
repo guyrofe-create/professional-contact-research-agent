@@ -47,6 +47,8 @@ jobs:
           progress=Path('output/progress.txt')
           expected=0
           expected_touched=0
+          expected_verified=0
+          expected_preserved_verified=0
           if progress.exists():
               text=progress.read_text(encoding='utf-8', errors='ignore')
               m=re.search(r'^completed=(\d+)$', text, re.M)
@@ -54,6 +56,13 @@ jobs:
               v=re.search(r'^algo_version=(\d+)$', text, re.M)
               if m and v and int(v.group(1))==VERSION: expected=int(m.group(1))
               if t: expected_touched=int(t.group(1))
+          summary=Path('output/summary.json')
+          if summary.exists():
+              try:
+                  summary_data=json.loads(summary.read_text(encoding='utf-8'))
+                  expected_verified=int(summary_data.get('verified',0) or 0)
+                  expected_preserved_verified=int(summary_data.get('preserved_verified_total',expected_verified) or 0)
+              except Exception: pass
           latest={}
           latest_any_version={}
           if cp.exists():
@@ -67,11 +76,23 @@ jobs:
                       pass
           keys={key for key,row in latest.items() if not str(row.get('status','')).startswith('PENDING')}
           actual=len(keys)
-          print(f'checkpoint version={VERSION} completed={actual} expected_at_least={expected}')
+          actual_verified=sum(str(row.get('status',''))=='VERIFIED' for row in latest.values())
+          retired_verified=0
+          retired=Path('output/retired_targets.jsonl')
+          if retired.exists():
+              for line in retired.read_text(encoding='utf-8',errors='ignore').splitlines():
+                  try: retired_verified += json.loads(line).get('status')=='VERIFIED'
+                  except Exception: pass
+          actual_preserved_verified=actual_verified+retired_verified
+          print(f'checkpoint version={VERSION} completed={actual} expected_at_least={expected} verified={actual_verified} expected_verified_at_least={expected_verified}')
           if expected and actual < expected:
               raise SystemExit(f'Safety stop: checkpoint regression {actual} < persisted progress {expected}')
           if expected_touched and len(latest_any_version) < expected_touched:
               raise SystemExit(f'Safety stop: checkpoint target loss {len(latest_any_version)} < {expected_touched}')
+          if expected_verified and actual_verified < expected_verified:
+              raise SystemExit(f'Safety stop: verified contact regression {actual_verified} < {expected_verified}')
+          if expected_preserved_verified and actual_preserved_verified < expected_preserved_verified:
+              raise SystemExit(f'Safety stop: preserved contact regression {actual_preserved_verified} < {expected_preserved_verified}')
           PY
       - name: Validate identity and email rules
         run: python -m unittest -v test_agent.py

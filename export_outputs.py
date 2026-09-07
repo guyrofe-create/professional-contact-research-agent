@@ -51,6 +51,21 @@ def read_checkpoint() -> pd.DataFrame:
     return pd.DataFrame(list(done.values()))
 
 
+def retired_verified_rows() -> list[dict]:
+    source = OUT / 'retired_targets.jsonl'
+    rows = []
+    if not source.exists():
+        return rows
+    for line in source.read_text(encoding='utf-8', errors='ignore').splitlines():
+        try:
+            row = json.loads(line)
+        except Exception:
+            continue
+        if row.get('status') == 'VERIFIED':
+            rows.append(row)
+    return rows
+
+
 def validate_xlsx(path: Path, expected_min_rows: int = 0):
     if not path.exists() or path.stat().st_size == 0:
         raise SystemExit(f'Missing/empty workbook: {path}')
@@ -95,13 +110,17 @@ def main():
     review.to_excel(OUT / 'review.xlsx', index=False)
 
     target_total = len(pd.read_csv('targets.csv')) if Path('targets.csv').exists() else len(frame)
+    retired_verified = retired_verified_rows()
+    active_verified = int((frame.status == 'VERIFIED').sum())
     fanout = expanded.groupby('email').size() if not expanded.empty else pd.Series(dtype=int)
     summary = {
         'algo_version': ALGO_VERSION,
         'total_targets': int(target_total),
         'touched_targets': int(len(frame)),
         'resolved_targets': int((~frame.status.str.startswith('PENDING')).sum()),
-        'verified': int((frame.status == 'VERIFIED').sum()),
+        'verified': active_verified,
+        'retired_verified_preserved': len(retired_verified),
+        'preserved_verified_total': active_verified + len(retired_verified),
         'not_verified': int((frame.status == 'NO_VERIFIED_PUBLIC_EMAIL').sum()),
         'pending': int(frame.status.str.startswith('PENDING').sum()),
         'review': int(frame.status.str.startswith('REVIEW').sum()),
