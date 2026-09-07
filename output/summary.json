@@ -2,10 +2,10 @@
   "algo_version": 12,
   "total_targets": 7195,
   "touched_targets": 7195,
-  "resolved_targets": 934,
+  "resolved_targets": 935,
   "verified": 923,
-  "not_verified": 11,
-  "pending": 6261,
+  "not_verified": 12,
+  "pending": 6260,
   "review": 0,
   "unique_emails": 565,
   "personal_unique_emails": 114,
@@ -73,9 +73,9 @@
       "VERIFIED": 2
     },
     "facebook_group_admin": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "NO_VERIFIED_PUBLIC_EMAIL": 1,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_SEARCH_PROVIDER": 34,
+      "PENDING_SEARCH_PROVIDER": 33,
       "VERIFIED": 11
     },
     "family_doctor": {
