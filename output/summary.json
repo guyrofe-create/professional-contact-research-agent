@@ -82,8 +82,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2645,
-      "PENDING_SEARCH_PROVIDER": 840,
+      "PENDING_ALGO_UPGRADE": 2620,
+      "PENDING_SEARCH_PROVIDER": 865,
       "VERIFIED": 80
     },
     "fertility_association": {
@@ -124,8 +124,8 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 1410,
-      "PENDING_SEARCH_PROVIDER": 735,
+      "PENDING_ALGO_UPGRADE": 1385,
+      "PENDING_SEARCH_PROVIDER": 760,
       "VERIFIED": 201
     },
     "ivf_unit": {
