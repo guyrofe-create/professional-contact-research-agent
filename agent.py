@@ -22,7 +22,7 @@ from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 ALGO_VERSION = 12
-PHYSICIAN_SEARCH_VERSION = 4
+PHYSICIAN_SEARCH_VERSION = 5
 PHYSICIAN_CATEGORIES = {"family_doctor", "gynecologist", "fertility_doctor"}
 SEARCH_UPGRADE_CATEGORIES = PHYSICIAN_CATEGORIES | {"clinic_manager"}
 PRIMARY_CONTACT_CATEGORIES = ("gynecologist", "family_doctor", "clinic_manager")
@@ -50,6 +50,7 @@ DIRECTORY_DOMAINS = ("doctors.co.il", "doctorim.co.il", "infomed.co.il", "medrev
 CONTACT_WORDS = ("contact", "about", "email", "team", "staff", "צור-קשר", "צור קשר", "אודות", "דוא״ל", "דואר אלקטרוני", "צוות")
 OFFICIAL_LINK_WORDS = ("website", "official site", "personal site", "clinic site", "אתר", "אתר אישי", "אתר המרפאה")
 PROFILE_PATH_HINTS = ("doctorprofile", "/doctor/", "/doctors/", "/experts/", "/profile/", "/people/", "doctorssearch/dr/")
+ORGANIZATION_PROFILE_PATH_HINTS = ("/doctor/", "/doctors/", "/team/", "/staff/", "/memb/", "/people/", "/experts/")
 GENERIC_LIST_PATHS = ("/doctors/", "/experts/", "/results", "/search", "/index", "/contact", "/contact-us")
 INSTITUTION_LINK_WORDS = ("department", "unit", "clinic", "מחלקה", "יחידה", "מרפאה", "אגף")
 CLINIC_ROUTE_WORDS = INSTITUTION_LINK_WORDS + ("branch", "medical center", "סניף", "מרכז רפואי", "שירותי המרפאה")
@@ -222,7 +223,14 @@ def valid_person_target_name(name,category=""):
     if not value or any(norm(phrase) in value for phrase in rejected_phrases):return False
     words=tokens(name)
     plausible=[word for word in words if word not in NON_NAME_TOKENS]
-    return 2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in str(name) for char in ("?", "!", "@"))
+    structurally_valid=2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in str(name) for char in ("?", "!", "@"))
+    if category=="clinic_manager":
+        return structurally_valid and any(norm(role) in value for role in CLINIC_MANAGER_ROLE_PHRASES)
+    return structurally_valid
+
+def organization_profile_path(url):
+    path=urlparse(str(url or "")).path.lower()
+    return any(hint in path for hint in ORGANIZATION_PROFILE_PATH_HINTS)
 def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
     search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
@@ -456,7 +464,8 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
     page_email_count=len({norm_email(x) for x in EMAIL_RE.findall(page_text) if valid_email(norm_email(x))})
     personal_site_route=bool(
         linked_identity and not large_institution(url) and not directory_site(url)
-        and not large_institution(identity_url) and page_email_count<=2
+        and not large_institution(identity_url) and not organization_profile_path(identity_url)
+        and page_email_count<=2
     )
     free_mail=email_domain in FREE_MAIL
     if not profession or not (verified_site or linked_identity):return None
@@ -580,7 +589,11 @@ def research(row):
             for email,context,method in items3:
                 score=candidate_score(email,u3,t3,title3,context,name,category,True,page_text,url)
                 if score is not None:candidates.append((score,email,u3,context[:500],hit["query"],"official_"+method,u3))
-            if not large_institution(u3):queue.extend((link,1,t3) for link in links3[:3])
+            if not large_institution(u3):
+                safe_official_links=links3
+                if config.get("kind")=="person":
+                    safe_official_links=[link for link in links3 if not organization_profile_path(link)]
+                queue.extend((link,1,t3) for link in safe_official_links[:3])
         crawled=set()
         crawl_limit=10 if category in PHYSICIAN_CATEGORIES else 5
         while queue and len(crawled)<crawl_limit:
@@ -630,6 +643,8 @@ def stored_candidate_still_safe(record):
     if kind=="person":
         if not valid_person_target_name(name,category) or forbidden_person_role(email):return False
         domain=email.rsplit("@",1)[1]
+        if str(record.get("extraction_method","")).startswith("linked_") and organization_profile_path(identity):
+            if not (name_match(name,evidence) or local_name_match(email,name) or role_address(email)):return False
         if domain not in FREE_MAIL and not (related_domains(domain,host(source)) or related_domains(domain,host(identity)) or local_name_match(email,name)):return False
         if role_address(email) and int(record.get("shared_target_count",1) or 1)>1:return False
         if large_institution(source):
