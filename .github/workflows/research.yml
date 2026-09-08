@@ -2,6 +2,12 @@ name: Autonomous Contact Research
 
 on:
   workflow_dispatch:
+    inputs:
+      export_only:
+        description: Rebuild validated outputs without performing web searches
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ['.github/run-now']
@@ -114,9 +120,14 @@ jobs:
           MAX_RESEARCH_ATTEMPTS: 4
           MAX_UNCHANGED_SEARCHES: 2
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          EXPORT_ONLY: ${{ inputs.export_only || false }}
         run: |
           mkdir -p output
-          timeout 330m python agent.py targets.csv --out output --resume || test $? -eq 124
+          extra_args=()
+          if [ "$EXPORT_ONLY" = "true" ]; then
+            extra_args+=(--export-only)
+          fi
+          timeout 330m python agent.py targets.csv --out output --resume "${extra_args[@]}" || test $? -eq 124
       - name: Write completion state
         if: always()
         run: |

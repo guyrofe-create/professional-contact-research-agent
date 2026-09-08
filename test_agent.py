@@ -50,6 +50,29 @@ class IdentityValidationTests(unittest.TestCase):
         migrated=agent.migrate_checkpoint_row(record)
         self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
 
+    def test_cross_person_link_on_clinic_team_is_rejected(self):
+        score=agent.candidate_score(
+            "gilgold@gmail.com","https://clinic.example.co.il/team/gil-goldman",
+            "גיל גולדמן רופא משפחה gilgold@gmail.com","ד״ר גיל גולדמן",
+            "gilgold@gmail.com","נחום סגול","family_doctor",True,
+            "נחום סגול מומחה רפואת משפחה","https://clinic.example.co.il/memb/nahum-segol",
+        )
+        self.assertIsNone(score)
+
+    def test_clinic_location_is_not_a_clinic_manager_person(self):
+        self.assertFalse(agent.valid_person_target_name("פתח תקווה","clinic_manager"))
+        self.assertFalse(agent.valid_person_target_name("רמת אביב ב","clinic_manager"))
+        self.assertTrue(agent.valid_person_target_name("נועה רז מנהלת מרפאה","clinic_manager"))
+
+    def test_stored_cross_person_clinic_mail_is_not_send_eligible(self):
+        record={
+            "status":"VERIFIED","name":"נטלי זיגל","category":"family_doctor",
+            "email":"manor@teamclinic360.co.il","source_url":"https://www.teamclinic360.co.il/",
+            "identity_url":"https://www.teamclinic360.co.il/doctor/dr-natalie/",
+            "evidence":"דוא״ל manor@teamclinic360.co.il","extraction_method":"linked_mailto",
+        }
+        self.assertFalse(agent.stored_candidate_still_safe(record))
+
     def test_physician_without_candidate_remains_retryable_before_limit(self):
         row={"name":"דנה לוי","category":"gynecologist","seed_source":""}
         def empty_search(*args, **kwargs):
