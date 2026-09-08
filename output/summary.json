@@ -2,12 +2,12 @@
   "algo_version": 12,
   "total_targets": 7185,
   "touched_targets": 7185,
-  "resolved_targets": 1002,
-  "verified": 945,
+  "resolved_targets": 1003,
+  "verified": 946,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 949,
+  "preserved_verified_total": 950,
   "not_verified": 10,
-  "pending": 6183,
+  "pending": 6182,
   "review": 47,
   "unique_emails": 575,
   "personal_unique_emails": 121,
@@ -92,8 +92,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2551,
-      "PENDING_SEARCH_PROVIDER": 927,
+      "PENDING_ALGO_UPGRADE": 2527,
+      "PENDING_SEARCH_PROVIDER": 951,
       "REVIEW_INVALID_TARGET_NAME": 1,
       "VERIFIED": 86
     },
@@ -141,10 +141,10 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 1205,
-      "PENDING_SEARCH_PROVIDER": 924,
+      "PENDING_ALGO_UPGRADE": 1179,
+      "PENDING_SEARCH_PROVIDER": 949,
       "REVIEW_INVALID_TARGET_NAME": 0,
-      "VERIFIED": 217
+      "VERIFIED": 218
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
