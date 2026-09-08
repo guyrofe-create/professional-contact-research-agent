@@ -1,8 +1,8 @@
-completed=1040
-verified=946
+completed=1043
+verified=949
 retired_verified_preserved=4
-preserved_verified_total=950
+preserved_verified_total=953
 touched=7185
-pending=6145
+pending=6142
 targets=7185
 algo_version=12
