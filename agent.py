@@ -22,8 +22,9 @@ from ddgs import DDGS
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 ALGO_VERSION = 12
-PHYSICIAN_SEARCH_VERSION = 3
+PHYSICIAN_SEARCH_VERSION = 4
 PHYSICIAN_CATEGORIES = {"family_doctor", "gynecologist", "fertility_doctor"}
+SEARCH_UPGRADE_CATEGORIES = PHYSICIAN_CATEGORIES | {"clinic_manager"}
 PRIMARY_CONTACT_CATEGORIES = ("gynecologist", "family_doctor", "clinic_manager")
 EMAIL_RE = re.compile(r"(?i)(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])")
 OBFUSCATED_EMAIL_RE = re.compile(
@@ -65,6 +66,7 @@ ORGANIZATION_DOMAIN_GROUPS = (
     {"maccabi4u.co.il", "mac.org.il"},
     {"clalit.co.il", "hospitals.clalit.co.il", "clalit.org.il"},
 )
+HMO_SEARCH_DOMAINS = ("clalit.co.il", "maccabi4u.co.il", "meuhedet.co.il", "leumit.co.il")
 INVALID_TARGET_NAMES = {"ראשי", "אודות", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית"}
 CATEGORY_CONFIG = {
     "gynecologist": {"priority": "A", "terms": ["יילוד", "גינקולוג", "גניקולוג", "רופא נשים", "רפואת נשים", "גינקולוגיה", "גניקולוגיה", "מיילדות", "obstetric", "gynecolog", "ob/gyn", "obgyn"], "kind": "person"},
@@ -76,7 +78,7 @@ CATEGORY_CONFIG = {
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/10.0; public-contact-research)"}
 SEARCH_CALL_LIMIT = int(os.getenv("SEARCH_CALL_LIMIT", "12000"))
 SEARCH_CIRCUIT_FAILURES = int(os.getenv("SEARCH_CIRCUIT_FAILURES", "20"))
-SEARCH_BACKENDS = os.getenv("SEARCH_BACKENDS", "bing,brave").strip()
+SEARCH_BACKENDS = os.getenv("SEARCH_BACKENDS", "yahoo,bing,brave").strip()
 RESEARCH_WORKERS = max(1, int(os.getenv("RESEARCH_WORKERS", "4")))
 SEARCH_CALLS = 0
 SEARCH_CONSECUTIVE_FAILURES = 0
@@ -110,7 +112,7 @@ GENERIC_PERSON_TARGET_PHRASES = {
     "טיפול", "טיפולים", "פיזיותרפיה", "דיכאון", "פלטפורמת", "רשימה של", "יחידות",
     "הרשמה וקבלה", "קניה ומכירה", "אודות אתר", "בלוג", "מדריך", "מרכז רפואי",
     "התמחות ברפואת משפחה", "להתמחות ברפואת משפחה", "ייעוץ רפואת ילדים", "קורס הכנה ללידה",
-    "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
+    "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי", "אתר דירוג", "דירוג הרופאים",
 }
 CLINIC_MANAGER_ROLE_PHRASES = {"מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי"}
 NON_NAME_TOKENS = {
@@ -225,20 +227,25 @@ def search_queries(name,category,license_number=""):
     terms=CATEGORY_CONFIG.get(category,{}).get("terms",[category]); profession=terms[0] if terms else category
     search_name=" ".join(tokens(name)); quoted=f'"{search_name}"'
     if category in PHYSICIAN_CATEGORIES:
-        # Start with the exact physician name, then deliberately look for an
-        # identity page at an HMO/clinic and for a personal contact page.
+        # DDGS/Bing does not reliably honour a parenthesized Google-style OR of
+        # several site: operators.  Search every HMO independently, then search
+        # personal/clinic contact routes.  A licence number is a high precision
+        # identity signal for Ministry-of-Health targets.
+        queries=[f'{quoted} {profession}']
+        if str(license_number).strip():queries.append(f'{quoted} "{str(license_number).strip()}"')
+        queries.extend(f'{quoted} {profession} site:{domain}' for domain in HMO_SEARCH_DOMAINS)
+        queries.extend((
+            f'{quoted} {profession} מרפאה',
+            f'{quoted} {profession} "צור קשר"',
+            f'{quoted} {profession} (email OR מייל OR "דואר אלקטרוני")',
+        ))
+        return list(dict.fromkeys(queries))
+    if category=="clinic_manager":
         return list(dict.fromkeys([
-            quoted,
-            f'{quoted} {profession}',
-            f'{quoted} (site:clalit.co.il OR site:maccabi4u.co.il OR site:meuhedet.co.il OR site:leumit.co.il)',
+            f'{quoted} ("מנהל מרפאה" OR "מנהלת מרפאה" OR "מנהל רפואי")',
+            *(f'{quoted} ("מנהל מרפאה" OR "מנהלת מרפאה") site:{domain}' for domain in HMO_SEARCH_DOMAINS),
             f'{quoted} ("צור קשר" OR "דואר אלקטרוני" OR email)',
         ]))
-    if category=="clinic_manager":
-        return [
-            f'{quoted} ("מנהל מרפאה" OR "מנהלת מרפאה" OR "מנהל רפואי")',
-            f'{quoted} (site:clalit.co.il OR site:maccabi4u.co.il OR site:meuhedet.co.il OR site:leumit.co.il)',
-            f'{quoted} ("צור קשר" OR "דואר אלקטרוני" OR email)',
-        ]
     queries=[f'{quoted} {profession}',f'{quoted} מייל',f'{quoted} email']
     if category in {"doula","midwife","childbirth_educator"}:
         queries += [f'{quoted} אתר רשמי צור קשר',f'{quoted} אינדקס']
@@ -267,7 +274,7 @@ def _search_once(query,max_results):
                 stats["errors"]+=1; PROVIDER_FAILURES[provider]=PROVIDER_FAILURES.get(provider,0)+1
                 if PROVIDER_FAILURES[provider]>=SEARCH_CIRCUIT_FAILURES:
                     PROVIDER_OPEN_UNTIL[provider]=time.monotonic()+900
-    target_results=min(max_results,8)
+    target_results=min(max_results,12)
     serpapi_key=os.getenv("SERPAPI_KEY","").strip()
     if serpapi_key and available("google"):
         try:
@@ -528,11 +535,26 @@ def annotate_shared_contacts(expanded):
         ]
     return result
 def research(row):
-    name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"physician_search_version":PHYSICIAN_SEARCH_VERSION if category in PHYSICIAN_CATEGORIES else 0,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
+    name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"physician_search_version":PHYSICIAN_SEARCH_VERSION if category in SEARCH_UPGRADE_CATEGORIES else 0,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":row.get("seed_type","")}
     if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name,category)):
         return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]","last_attempt_at":datetime.now(timezone.utc).isoformat()}
     def inspect_hit(hit):
         if hit["url"] in attempts:return
+        # Search snippets sometimes contain the public address even when an HMO
+        # or personal site is rendered with JavaScript and cannot be downloaded
+        # by the worker.  Accept it only when the result itself proves exact
+        # identity + specialty and passes the same strict candidate scorer.
+        snippet_text=(str(hit.get("title", ""))+" "+str(hit.get("snippet", ""))).strip()
+        if not hit.get("seed") and snippet_text and allowed_search_identity_page(
+            hit["url"], str(hit.get("title", "")), snippet_text, name, category
+        ):
+            for snippet_email in {norm_email(x) for x in EMAIL_RE.findall(snippet_text)}:
+                score=candidate_score(
+                    snippet_email,hit["url"],snippet_text,str(hit.get("title", "")),snippet_text,
+                    name,category,True,snippet_text,hit["url"],verified_clinic_route=True,
+                )
+                if score is not None:
+                    candidates.append((score,snippet_email,hit["url"],snippet_text[:500],hit["query"],"search_snippet",hit["url"]))
         url,html=fetch(hit["url"]); attempts.append(url)
         if not html:search_state["fetch_failures"]+=1; return
         search_state["pages_fetched"]+=1
@@ -618,7 +640,7 @@ def stored_candidate_still_safe(record):
 def migrate_checkpoint_row(record):
     result=dict(record)
     if int(result.get("algo_version",0) or 0)==ALGO_VERSION:
-        if result.get("category") not in PHYSICIAN_CATEGORIES or int(result.get("physician_search_version",0) or 0)>=PHYSICIAN_SEARCH_VERSION:return result
+        if result.get("category") not in SEARCH_UPGRADE_CATEGORIES or int(result.get("physician_search_version",0) or 0)>=PHYSICIAN_SEARCH_VERSION:return result
         # A search-strategy upgrade must never demote or discard a previously
         # verified address. Existing export safety rules may still keep a
         # questionable/shared route out of send-eligible contact lists.
@@ -629,7 +651,7 @@ def migrate_checkpoint_row(record):
         result.update({"physician_search_version":PHYSICIAN_SEARCH_VERSION,"status":"PENDING_ALGO_UPGRADE","next_retry_at":"","retry_count":0})
         return result
     source_version=int(result.get("algo_version",0) or 0)
-    if source_version not in {7,8,9,10,11}:return None
+    if source_version not in {7,8,9,10,11,12}:return None
     old_status=str(result.get("status",""))
     result["algo_version"]=ALGO_VERSION
     if old_status=="VERIFIED" and stored_candidate_still_safe(record):return result

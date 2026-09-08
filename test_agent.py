@@ -31,6 +31,25 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual(migrated["status"],"VERIFIED")
         self.assertEqual(migrated["physician_search_version"],agent.PHYSICIAN_SEARCH_VERSION)
 
+    def test_version_twelve_verified_contact_survives_search_upgrade(self):
+        record={
+            "algo_version":12,"physician_search_version":3,"status":"VERIFIED",
+            "name":"דנה לוי","category":"gynecologist","email":"dana.levy@gmail.com",
+            "source_url":"https://dr-dana.example.co.il/","identity_url":"https://dr-dana.example.co.il/",
+            "evidence":"דנה לוי גינקולוגית",
+        }
+        migrated=agent.migrate_checkpoint_row(record)
+        self.assertEqual("VERIFIED", migrated["status"])
+        self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
+
+    def test_clinic_manager_is_researched_after_search_upgrade(self):
+        record={
+            "algo_version":agent.ALGO_VERSION,"physician_search_version":agent.PHYSICIAN_SEARCH_VERSION-1,
+            "status":"NO_VERIFIED_PUBLIC_EMAIL","name":"דנה לוי מנהלת מרפאה","category":"clinic_manager",
+        }
+        migrated=agent.migrate_checkpoint_row(record)
+        self.assertEqual("PENDING_ALGO_UPGRADE", migrated["status"])
+
     def test_physician_without_candidate_remains_retryable_before_limit(self):
         row={"name":"דנה לוי","category":"gynecologist","seed_source":""}
         def empty_search(*args, **kwargs):
@@ -41,13 +60,15 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual(result["status"],"PENDING_SEARCH_PROVIDER")
         self.assertEqual(result["resolution_reason"],"retry_scheduled")
 
-    def test_all_doctor_searches_start_with_exact_name_then_target_hmo_and_contact_pages(self):
+    def test_all_doctor_searches_split_hmos_and_target_contact_pages(self):
         for category in ("family_doctor", "gynecologist", "fertility_doctor"):
             with self.subTest(category=category):
-                queries=agent.search_queries("ד״ר דוד כהן", category)
-                self.assertEqual('"ד״ר דוד כהן"', queries[0])
-                self.assertTrue(any("site:clalit.co.il" in query and "site:maccabi4u.co.il" in query for query in queries))
-                self.assertTrue(any("צור קשר" in query and "email" in query for query in queries))
+                queries=agent.search_queries("ד״ר דוד כהן", category, "12345")
+                self.assertIn(agent.CATEGORY_CONFIG[category]["terms"][0], queries[0])
+                for domain in agent.HMO_SEARCH_DOMAINS:
+                    self.assertTrue(any(f"site:{domain}" in query for query in queries))
+                self.assertTrue(any("צור קשר" in query for query in queries))
+                self.assertTrue(any("12345" in query for query in queries))
 
     def test_clinic_manager_search_targets_role_hmo_and_contact_pages(self):
         queries=agent.search_queries("דנה לוי", "clinic_manager")
@@ -64,6 +85,23 @@ class IdentityValidationTests(unittest.TestCase):
             verified_clinic_route=True,
         )
         self.assertGreaterEqual(score, 75)
+
+    def test_email_in_exact_identity_search_snippet_is_accepted_when_page_is_dynamic(self):
+        row={"name":"דוד כהן","category":"family_doctor","seed_source":""}
+        hit={
+            "url":"https://www.clalit.co.il/he/sefersherut/pages/doctor.aspx?id=1",
+            "title":"דוד כהן - מומחה ברפואת משפחה",
+            "snippet":"דוד כהן מומחה ברפואת משפחה, מרפאת הדרים, clinic@clalit.org.il",
+            "query":"דוד כהן רפואת משפחה","seed":False,
+        }
+        def fake_search(*args, **kwargs):
+            kwargs["state"].update({"queries":1,"errors":0,"results":1,"provider":"fake","circuit_open":False,"result_urls":[hit["url"]]})
+            return iter([hit])
+        with patch.object(agent,"search_web",side_effect=fake_search), patch.object(agent,"fetch",return_value=(hit["url"],"")):
+            result=agent.research(row)
+        self.assertEqual("VERIFIED", result["status"])
+        self.assertEqual("clinic@clalit.org.il", result["email"])
+        self.assertEqual("search_snippet", result["extraction_method"])
 
     def test_family_doctor_terminal_v11_result_is_researched_again(self):
         old = {"algo_version": 11, "name": "דוד כהן", "category": "family_doctor", "status": "NO_VERIFIED_PUBLIC_EMAIL"}

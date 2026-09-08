@@ -103,7 +103,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           SEARCH_CALL_LIMIT: 12000
           SEARCH_CIRCUIT_FAILURES: 20
-          SEARCH_BACKENDS: bing,brave
+          SEARCH_BACKENDS: yahoo,bing,brave
           RESEARCH_WORKERS: 6
           MAX_TARGETS_PER_RUN: 10000
           PERSIST_EVERY_TARGETS: 50
