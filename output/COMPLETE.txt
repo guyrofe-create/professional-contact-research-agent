@@ -1,9 +1,9 @@
 IN_PROGRESS
-completed=1043
-verified=949
+completed=1047
+verified=950
 retired_verified_preserved=4
-preserved_verified_total=953
+preserved_verified_total=954
 touched=7185
-pending=6142
+pending=6138
 targets=7185
 algo_version=12
