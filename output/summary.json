@@ -2,21 +2,21 @@
   "algo_version": 12,
   "total_targets": 7185,
   "touched_targets": 7185,
-  "resolved_targets": 987,
-  "verified": 934,
+  "resolved_targets": 994,
+  "verified": 938,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 938,
+  "preserved_verified_total": 942,
   "not_verified": 10,
-  "pending": 6198,
-  "review": 43,
-  "unique_emails": 568,
-  "personal_unique_emails": 116,
-  "organization_unique_emails": 452,
+  "pending": 6191,
+  "review": 46,
+  "unique_emails": 570,
+  "personal_unique_emails": 117,
+  "organization_unique_emails": 453,
   "shared_unique_emails": 253,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 17,
-  "personalization_safe_emails": 116,
-  "organization_or_shared_routes": 452,
+  "personalization_safe_emails": 117,
+  "organization_or_shared_routes": 453,
   "direct_emails": 481,
   "institutional_emails": 74,
   "by_category": {
@@ -43,9 +43,9 @@
     },
     "clinic_manager": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3,
+      "PENDING_ALGO_UPGRADE": 0,
       "PENDING_SEARCH_PROVIDER": 0,
-      "REVIEW_INVALID_TARGET_NAME": 43,
+      "REVIEW_INVALID_TARGET_NAME": 46,
       "VERIFIED": 2
     },
     "community_clinic": {
@@ -92,8 +92,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3446,
-      "PENDING_SEARCH_PROVIDER": 35,
+      "PENDING_ALGO_UPGRADE": 3423,
+      "PENDING_SEARCH_PROVIDER": 58,
       "REVIEW_INVALID_TARGET_NAME": 0,
       "VERIFIED": 84
     },
@@ -141,10 +141,10 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2101,
-      "PENDING_SEARCH_PROVIDER": 37,
+      "PENDING_ALGO_UPGRADE": 2077,
+      "PENDING_SEARCH_PROVIDER": 57,
       "REVIEW_INVALID_TARGET_NAME": 0,
-      "VERIFIED": 208
+      "VERIFIED": 212
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
