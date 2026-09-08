@@ -2,13 +2,13 @@
   "algo_version": 12,
   "total_targets": 7185,
   "touched_targets": 7185,
-  "resolved_targets": 970,
-  "verified": 933,
+  "resolved_targets": 987,
+  "verified": 934,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 937,
+  "preserved_verified_total": 938,
   "not_verified": 10,
-  "pending": 6215,
-  "review": 27,
+  "pending": 6198,
+  "review": 43,
   "unique_emails": 568,
   "personal_unique_emails": 116,
   "organization_unique_emails": 452,
@@ -43,9 +43,9 @@
     },
     "clinic_manager": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 19,
+      "PENDING_ALGO_UPGRADE": 3,
       "PENDING_SEARCH_PROVIDER": 0,
-      "REVIEW_INVALID_TARGET_NAME": 27,
+      "REVIEW_INVALID_TARGET_NAME": 43,
       "VERIFIED": 2
     },
     "community_clinic": {
@@ -92,10 +92,10 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 3464,
-      "PENDING_SEARCH_PROVIDER": 18,
+      "PENDING_ALGO_UPGRADE": 3446,
+      "PENDING_SEARCH_PROVIDER": 35,
       "REVIEW_INVALID_TARGET_NAME": 0,
-      "VERIFIED": 83
+      "VERIFIED": 84
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -141,8 +141,8 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 2117,
-      "PENDING_SEARCH_PROVIDER": 21,
+      "PENDING_ALGO_UPGRADE": 2101,
+      "PENDING_SEARCH_PROVIDER": 37,
       "REVIEW_INVALID_TARGET_NAME": 0,
       "VERIFIED": 208
     },
