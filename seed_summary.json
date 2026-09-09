@@ -1,7 +1,7 @@
 {
   "discovery_version": 8,
   "total": 6992,
-  "previous": 7139,
+  "previous": 6992,
   "moh_records_refreshed": 5614,
   "moh_targets_retained": 5065,
   "ima_official_profiles": {
@@ -41,133 +41,6 @@
     "fertility_nurse": 7
   },
   "discovery": {
-    "family_doctor": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "clinic_manager": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "womens_health_center": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "community_clinic": {
-      "added_raw": 0,
-      "errors": [
-        "DDGSException: RequestError: RequestError('error sending request for url (https://www.bing.com/search?q=%D7%9E%D7%A8%D7%A4%D7%90%D7%AA+"
-      ]
-    },
-    "doula": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "midwife": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "childbirth_educator": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "birth_center": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_doctor": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "ivf_unit": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_center": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "embryologist": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_nurse": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_consultant": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "sperm_bank": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_preservation": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "fertility_association": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "pelvic_floor": {
-      "added_raw": 0,
-      "errors": [
-        "DDGSException: RequestError: RequestError('error sending request for url (https://www.bing.com/search?q=%D7%A4%D7%99%D7%96%D7%99%D7%95%"
-      ]
-    },
-    "sleep_consultant": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "pregnancy_dietitian": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "parenting_center": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "perinatal_mental_health": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "facebook_group_admin": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "community_manager": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "parenting_site": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "pregnancy_podcast": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "doula_school": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "childbirth_school": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "women_health_creator": {
-      "added_raw": 0,
-      "errors": []
-    },
-    "clinic_manager_official_sitemap": {
-      "pages_considered": 0,
-      "pages_fetched": 0,
-      "added_raw": 0,
-      "errors": [
-        "HTTPError: 403 Client Error: Forbidden for url: https://hospitals.clalit.co.il/sitemap.xml"
-      ]
-    }
+    "skipped": "version-8 discovery already persisted"
   }
 }
