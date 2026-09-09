@@ -184,6 +184,14 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertTrue(agent.name_match("שירלי לויט דרסן", "שירלי לויט דרסן יועצת הנקה מוסמכת"))
         self.assertFalse(agent.name_match("שירלי לויט דרסן", "רשות המסים של מחוז בואנוס איירס"))
 
+    def test_primary_physician_target_rejects_search_titles_and_profession_labels(self):
+        self.assertFalse(agent.valid_person_target_name("אלון השרון", "family_doctor", seed_type="web"))
+        self.assertFalse(agent.valid_person_target_name("חיפוש מאגר מומחים, רופא מומחה", "family_doctor"))
+        self.assertFalse(agent.valid_person_target_name("רום-גליל (רפואת משפחה)", "family_doctor"))
+        self.assertFalse(agent.valid_person_target_name("מידע נוסף", "gynecologist"))
+        self.assertFalse(agent.valid_person_target_name("משה גיא רופא", "gynecologist"))
+        self.assertTrue(agent.valid_person_target_name("משה גיא", "gynecologist", seed_type="moh"))
+
     def test_wrong_foreign_email_is_rejected(self):
         score = agent.candidate_score(
             "cep.creditos@arba.gov.ar",
