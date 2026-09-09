@@ -92,8 +92,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
-      "PENDING_ALGO_UPGRADE": 392,
-      "PENDING_SEARCH_PROVIDER": 3087,
+      "PENDING_ALGO_UPGRADE": 366,
+      "PENDING_SEARCH_PROVIDER": 3113,
       "REVIEW_INVALID_TARGET_NAME": 1,
       "VERIFIED": 87
     },
