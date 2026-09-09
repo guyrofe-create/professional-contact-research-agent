@@ -636,7 +636,9 @@ class IdentityValidationTests(unittest.TestCase):
         seed_targets.add(rows, "IVF הפריה חוץ גופית", "embryologist", "https://example.org/ivf", "web")
         seed_targets.add(rows, "התמחות ברפואת משפחה", "family_doctor", "https://example.org/residency", "web")
         seed_targets.add(rows, "ייעוץ רפואת ילדים", "family_doctor", "https://example.org/pediatrics", "web")
+        seed_targets.add(rows, "מומחה ברפואת משפחה", "family_doctor", "https://example.org/specialist", "web")
         self.assertEqual([], rows)
+        self.assertFalse(agent.valid_person_target_name("מומחה ברפואת משפחה", "family_doctor"))
 
     def test_named_clinic_manager_is_retained_but_generic_role_is_rejected(self):
         rows = []
