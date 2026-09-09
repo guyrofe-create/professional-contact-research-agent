@@ -141,6 +141,16 @@ class IdentityValidationTests(unittest.TestCase):
         record["identity_specialty_verified"]=False
         self.assertFalse(agent.stored_candidate_still_safe(record))
 
+    def test_missing_schema_from_dataframe_does_not_crash_export(self):
+        record={
+            "algo_version":agent.ALGO_VERSION,"verification_schema_version":float("nan"),
+            "status":"VERIFIED","name":"דוד כהן","category":"gynecologist",
+            "email":"david.cohen@gmail.com","source_url":"https://dr-cohen.example.co.il/",
+            "identity_url":"https://dr-cohen.example.co.il/","evidence":"דוד כהן מומחה בגינקולוגיה",
+            "identity_evidence":"דוד כהן מומחה בגינקולוגיה",
+        }
+        self.assertTrue(agent.stored_candidate_still_safe(record))
+
     def test_legacy_wrong_specialty_and_publisher_contacts_are_demoted(self):
         rows=[
             {"name":"דוד מיכאל","category":"gynecologist","email":"mdavid652@gmail.com","source_url":"https://doctors.example.co.il/dermatology/michael-david","identity_url":"https://doctors.example.co.il/dermatology/michael-david","evidence":"פרופ מיכאל דוד מומחה לרפואת עור"},

@@ -696,7 +696,9 @@ def stored_candidate_still_safe(record):
     if kind=="person":
         if not valid_person_target_name(name,category,record.get("role_evidence","")) or forbidden_person_role(email):return False
         if category in PRIMARY_CONTACT_CATEGORIES:
-            schema=int(record.get("verification_schema_version",0) or 0)
+            raw_schema=record.get("verification_schema_version",0)
+            try:schema=0 if pd.isna(raw_schema) else int(raw_schema or 0)
+            except (TypeError,ValueError):schema=0
             if schema>=VERIFICATION_SCHEMA_VERSION:
                 if not record.get("identity_name_verified") or not record.get("identity_specialty_verified"):return False
             elif not (name_match(name,specialty_proof) and identity_specialty_match(name,category,specialty_proof)):
