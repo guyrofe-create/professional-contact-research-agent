@@ -103,8 +103,8 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 308,
-      "PENDING_ALGO_UPGRADE": 2208,
-      "PENDING_RESEARCH": 886,
+      "PENDING_ALGO_UPGRADE": 2183,
+      "PENDING_RESEARCH": 911,
       "PENDING_SEARCH_PROVIDER": 3,
       "VERIFIED": 9
     },
@@ -152,8 +152,8 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 144,
-      "PENDING_ALGO_UPGRADE": 1187,
-      "PENDING_RESEARCH": 955,
+      "PENDING_ALGO_UPGRADE": 1162,
+      "PENDING_RESEARCH": 980,
       "PENDING_SEARCH_PROVIDER": 3,
       "VERIFIED": 55
     },
