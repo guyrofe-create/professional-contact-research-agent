@@ -65,6 +65,13 @@ PERSON_CATEGORIES = {
     "fertility_nurse", "fertility_consultant", "doula", "midwife", "childbirth_educator",
     "lactation", "pelvic_floor", "sleep_consultant", "pregnancy_dietitian", "perinatal_mental_health",
 }
+PRIMARY_PHYSICIAN_CATEGORIES = {"gynecologist", "family_doctor"}
+PHYSICIAN_NAME_FORBIDDEN_TOKENS = {
+    "רופא", "רופאה", "רופאת", "רופאי", "רופאים", "רופאות", "רפואה", "רפואת",
+    "מומחה", "מומחית", "מומחים", "מומחיות", "חיפוש", "מאגר", "אינדקס", "איתור",
+    "מרפאה", "מרפאת", "מרפאות", "מרכז", "מחלקה", "איגוד", "החוג", "זימון",
+    "מידע", "נוסף", "אתר", "דירוג", "קופה", "כללית", "מכבי", "מאוחדת", "לאומית",
+}
 DISCOVERY = {
     "family_doctor": ["רופא משפחה ישראל", "רופאת משפחה ישראל", "מומחה רפואת משפחה ישראל"],
     "clinic_manager": [
@@ -135,10 +142,20 @@ def valid_person_target(name, category, source_type="", role_evidence=""):
     if category not in PERSON_CATEGORIES:
         return True
     value=clean_name(name).lower()
+    # Search result titles are not a dependable physician roster.  The official
+    # MOH/IMA sources already provide thousands of named doctors, while web
+    # titles repeatedly introduced directories, clinics and navigation labels.
+    if category in PRIMARY_PHYSICIAN_CATEGORIES and source_type == "web":
+        return False
     rejected_phrases=GENERIC_PERSON_TARGET_PHRASES-(CLINIC_MANAGER_ROLE_PHRASES if category=="clinic_manager" else set())
     if any(phrase in value for phrase in rejected_phrases):
         return False
     words=[word for word in re.split(r"[^\w\u0590-\u05ff]+",value) if len(word)>=2 and word not in {"דר","דוקטור","פרופ","פרופסור"}]
+    if category in PRIMARY_PHYSICIAN_CATEGORIES and (
+        any(word in PHYSICIAN_NAME_FORBIDDEN_TOKENS for word in words)
+        or any(char in value for char in ("(", ")", "|", ":", ","))
+    ):
+        return False
     plausible=[word for word in words if word not in NON_NAME_TOKENS]
     structurally_valid=2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in value for char in ("?","!","@"))
     if category=="clinic_manager":

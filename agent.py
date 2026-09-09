@@ -131,6 +131,13 @@ NON_NAME_TOKENS = {
     "מנהל", "מנהלת", "התמחות", "להתמחות", "ייעוץ", "ילדים", "כללית", "מכבי", "מאוחדת", "לאומית",
     "pelvic", "floor", "doula", "midwife", "clinic", "center", "centre",
 }
+PRIMARY_PHYSICIAN_CATEGORIES = {"gynecologist", "family_doctor"}
+PHYSICIAN_NAME_FORBIDDEN_TOKENS = {
+    "רופא", "רופאה", "רופאת", "רופאי", "רופאים", "רופאות", "רפואה", "רפואת",
+    "מומחה", "מומחית", "מומחים", "מומחיות", "חיפוש", "מאגר", "אינדקס", "איתור",
+    "מרפאה", "מרפאת", "מרפאות", "מרכז", "מחלקה", "איגוד", "החוג", "זימון",
+    "מידע", "נוסף", "אתר", "דירוג", "קופה", "כללית", "מכבי", "מאוחדת", "לאומית",
+}
 
 
 def http_session():
@@ -231,11 +238,16 @@ def role_address(email):
     local=normalized_local(email)
     return local in GENERIC_LOCAL or any(part in local for part in INSTITUTION_ROLE_PARTS) or local in PERSON_ROLE_REJECT
 def forbidden_person_role(email): return normalized_local(email) in PERSON_ROLE_REJECT
-def valid_person_target_name(name,category="",role_evidence=""):
+def valid_person_target_name(name,category="",role_evidence="",seed_type=""):
     value=norm(name)
+    if category in PRIMARY_PHYSICIAN_CATEGORIES and seed_type == "web":return False
     rejected_phrases=GENERIC_PERSON_TARGET_PHRASES-(CLINIC_MANAGER_ROLE_PHRASES if category=="clinic_manager" else set())
     if not value or any(norm(phrase) in value for phrase in rejected_phrases):return False
     words=tokens(name)
+    if category in PRIMARY_PHYSICIAN_CATEGORIES and (
+        any(word in PHYSICIAN_NAME_FORBIDDEN_TOKENS for word in words)
+        or any(char in str(name) for char in ("(", ")", "|", ":", ","))
+    ):return False
     plausible=[word for word in words if word not in NON_NAME_TOKENS]
     structurally_valid=2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in str(name) for char in ("?", "!", "@"))
     if category=="clinic_manager":
@@ -563,7 +575,7 @@ def annotate_shared_contacts(expanded):
     return result
 def research(row):
     name=str(row.get("name","")).strip(); category=str(row.get("category","")).strip(); seed_source=str(row.get("seed_source","")).strip(); license_number=str(row.get("license_number","")).strip(); role_evidence=str(row.get("role_evidence","")).strip(); config=CATEGORY_CONFIG.get(category,{"priority":"","kind":"person"}); attempts=[]; seen_hits=set(); candidates=[]; search_state={"queries":0,"errors":0,"results":0,"provider":"","circuit_open":False,"pages_fetched":0,"fetch_failures":0}; base={"algo_version":ALGO_VERSION,"physician_search_version":PHYSICIAN_SEARCH_VERSION if category in SEARCH_UPGRADE_CATEGORIES else 0,"name":name,"category":category,"priority":config.get("priority",""),"target_kind":config.get("kind",""),"seed_source":seed_source,"license_number":license_number,"seed_type":str(row.get("seed_type","")).strip(),"role_evidence":role_evidence}
-    if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name,category,role_evidence)):
+    if norm(name) in {norm(x) for x in INVALID_TARGET_NAMES} or (config.get("kind")=="person" and not valid_person_target_name(name,category,role_evidence,str(row.get("seed_type","")).strip())):
         return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]","last_attempt_at":datetime.now(timezone.utc).isoformat()}
     def add_candidate(score,email,source,evidence,query,method,identity_url,identity_title,identity_text):
         if score is None:return
