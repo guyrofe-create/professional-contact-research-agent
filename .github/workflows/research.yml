@@ -27,6 +27,8 @@ jobs:
   research:
     runs-on: ubuntu-latest
     timeout-minutes: 350
+    env:
+      RESEARCH_FOCUS_CATEGORIES: gynecologist,family_doctor,clinic_manager
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,7 +50,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json, re
-          VERSION=12
+          VERSION=13
           cp=Path('output/checkpoint.jsonl')
           progress=Path('output/progress.txt')
           expected=0
@@ -66,8 +68,13 @@ jobs:
           if summary.exists():
               try:
                   summary_data=json.loads(summary.read_text(encoding='utf-8'))
-                  expected_verified=int(summary_data.get('verified',0) or 0)
-                  expected_preserved_verified=int(summary_data.get('preserved_verified_total',expected_verified) or 0)
+                  # A verification-schema upgrade deliberately demotes unsafe
+                  # legacy rows for fresh research.  Only enforce verified-row
+                  # monotonicity inside the same algorithm version; otherwise
+                  # the migration can never start.
+                  if int(summary_data.get('algo_version',0) or 0)==VERSION:
+                      expected_verified=int(summary_data.get('verified',0) or 0)
+                      expected_preserved_verified=int(summary_data.get('preserved_verified_total',expected_verified) or 0)
               except Exception: pass
           latest={}
           latest_any_version={}
@@ -103,6 +110,8 @@ jobs:
       - name: Validate identity and email rules
         run: python -m unittest -v test_agent.py
       - name: Discover and retain target universe
+        env:
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: python seed_targets.py
       - name: Run resumable verified research shift
         env:

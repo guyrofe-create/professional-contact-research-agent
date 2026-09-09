@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
+import concurrent.futures
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -10,9 +13,11 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 UA = {"User-Agent": "Mozilla/5.0 (compatible; ProfessionalContactResearch/5.0)"}
-DISCOVERY_VERSION = 5
+DISCOVERY_VERSION = 8
 MOH = "https://data.gov.il/he/datasets/ministry-health/database-of-doctors-licenses-moh"
 MOH_RESOURCE = "9c64c522-bbc2-48fe-96fb-3b2a8626f59e"
 MOH_DATASTORE = "https://data.gov.il/api/3/action/datastore_search"
@@ -22,6 +27,16 @@ IMA_SPECIALTIES = {
     "gynecologist": 20,
     "family_doctor": 99,
 }
+KNOWN_MANAGER_URLS = (
+    "https://hospitals.clalit.co.il/geha/he/med/clinics/Pages/adults.aspx",
+    "https://hospitals.clalit.co.il/soroka/he/med-units/medicine-division/Pages/dermatoclinic.aspx",
+    "https://hospitals.clalit.co.il/emek/he/departmentsandclinics/internal_departments/Pages/mental_health_clinic.aspx",
+    "https://hospitals.clalit.co.il/carmel/he/Departments-and-Outpatient-Clinics-main/Clinical-departments-and-clinics/Pages/pre-surgery.aspx",
+    "https://hospitals.clalit.co.il/kaplan/he/med_units/travel_clinic/Pages/travel_clinic.aspx",
+    "https://hospitals.clalit.co.il/rabin/he/special-medical-services/travelers-clinic-beilinson/Pages/travelers_clinic_beilinson.aspx",
+    "https://hospitals.clalit.co.il/rabin/he/departments-and-clinics/neurology/Pages/multiple_sclerosis_neuro_immunology.aspx",
+    "https://hospitals.clalit.co.il/shalvata/he/children/departments/Pages/childrens_ward.aspx",
+)
 EXCLUDED_CATEGORIES = {"instagram_creator"}
 INVALID_ENTITY_NAMES = {
     "ראשי", "אודות", "אודותינו", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית",
@@ -33,7 +48,7 @@ GENERIC_PERSON_TARGET_PHRASES = {
     "התמחות ברפואת משפחה", "להתמחות ברפואת משפחה", "ייעוץ רפואת ילדים", "קורס הכנה ללידה",
     "מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי",
 }
-CLINIC_MANAGER_ROLE_PHRASES = {"מנהל מרפאה", "מנהלת מרפאה", "מנהל רפואי"}
+CLINIC_MANAGER_ROLE_PHRASES = {"מנהל מרפאה", "מנהלת מרפאה", "מנהל המרפאה", "מנהלת המרפאה", "מנהל רפואי", "מנהלת רפואית"}
 NON_NAME_TOKENS = {
     "ivf", "vbac", "israel", "ישראל", "אתר", "קורס", "קורסי", "לידה", "לידות",
     "הריון", "הנקה", "פוריות", "פריון", "הפריה", "גופית", "אמבריולוגיה", "אמבריולוג",
@@ -50,7 +65,16 @@ PERSON_CATEGORIES = {
 }
 DISCOVERY = {
     "family_doctor": ["רופא משפחה ישראל", "רופאת משפחה ישראל", "מומחה רפואת משפחה ישראל"],
-    "clinic_manager": ["מנהל מרפאה קופת חולים", "מנהלת מרפאה קופת חולים", "מנהל רפואי מרפאה"],
+    "clinic_manager": [
+        'site:hospitals.clalit.co.il "מנהל המרפאה" ד"ר',
+        'site:hospitals.clalit.co.il "מנהלת המרפאה" ד"ר',
+        'site:clalit.co.il "מנהל המרפאה" ד"ר',
+        'site:maccabi4u.co.il "מנהל המרפאה" ד"ר',
+        'site:meuhedet.co.il "מנהל המרפאה" ד"ר',
+        'site:leumit.co.il "מנהל המרפאה" ד"ר',
+        '"מנהל מרפאה" ד"ר קופת חולים',
+        '"מנהלת מרפאה" ד"ר קופת חולים',
+    ],
     "womens_health_center": ["מרכז בריאות האישה", "מרפאת נשים קופת חולים", "מרכז בריאות האישה קופת חולים"],
     "community_clinic": ["מרפאת משפחה קופת חולים", "מרפאה קהילתית", "מרכז רפואי קהילתי"],
     "doula": ["דולה ישראל", "אינדקס דולות ישראל"],
@@ -105,7 +129,7 @@ def person_identity_key(name, category):
     return " ".join(sorted(words)) if category in PERSON_CATEGORIES else " ".join(words)
 
 
-def valid_person_target(name, category, source_type=""):
+def valid_person_target(name, category, source_type="", role_evidence=""):
     if category not in PERSON_CATEGORIES:
         return True
     value=clean_name(name).lower()
@@ -114,13 +138,98 @@ def valid_person_target(name, category, source_type=""):
         return False
     words=[word for word in re.split(r"[^\w\u0590-\u05ff]+",value) if len(word)>=2 and word not in {"דר","דוקטור","פרופ","פרופסור"}]
     plausible=[word for word in words if word not in NON_NAME_TOKENS]
-    return 2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in value for char in ("?","!","@"))
+    structurally_valid=2<=len(words)<=6 and len(plausible)>=2 and not any(word.isdigit() for word in words) and not any(char in value for char in ("?","!","@"))
+    if category=="clinic_manager":
+        evidence=clean_name(str(name)+" "+str(role_evidence)).lower()
+        return structurally_valid and any(role in evidence for role in CLINIC_MANAGER_ROLE_PHRASES) and any(word in evidence for word in ("מרפאה","מרפאת"))
+    return structurally_valid
 
 
 def add(rows, name, category, source="", source_type="discovery", **metadata):
     name = clean_name(name)
-    if category not in EXCLUDED_CATEGORIES and name not in INVALID_ENTITY_NAMES and 3 <= len(name) <= 160 and valid_person_target(name,category,source_type):
+    if category not in EXCLUDED_CATEGORIES and name not in INVALID_ENTITY_NAMES and 3 <= len(name) <= 160 and valid_person_target(name,category,source_type,metadata.get("role_evidence","")):
         rows.append({"name": name, "category": category, "seed_source": source, "seed_type": source_type} | metadata)
+
+
+def clinic_manager_people(title, snippet):
+    """Extract named physicians only when nearby text states a clinic-manager role."""
+    # clean_name is intentionally capped for entity labels; never use that cap
+    # for full-page evidence or roles below the first navigation block vanish.
+    text = re.sub(r"\s+", " ", f"{title} {snippet}").strip()[:500000]
+    roles = list(re.finditer(r"(?:מנהל(?:ת)?(?:\s+רפואי(?:ת)?)?\s+(?:ה)?מרפא(?:ה|ת)|מנהל(?:ת)?\s+מרפא(?:ה|ת))", text))
+    doctors = list(re.finditer(r"(?:ד[\"״']?ר|דוקטור|פרופ[\"׳']?|פרופסור)\s+([א-ת][א-ת׳'\"-]+(?:\s+[א-ת][א-ת׳'\"-]+){1,3})", text))
+    stop={"מונה","מונתה","הוא","היא","מנהל","מנהלת","רפואי","רפואית","מרפאה","מרפאת","המרפאה","של","את","במרפאה","למרפאה","צוות","הצוות","מציע","מציעה","יצירת","קשר","סגן","סגנית","אח","אחות","אחראי","אחראית","מיקום","פרטים","נגישות","תוכן","דף","כתובת","טלפון","דואל","דוא״ל","שעות"}
+    found=[]
+    for role in roles:
+        if re.search(r"(?:סגן|סגנית|ממלא(?:ת)? מקום)\s*$",text[max(0,role.start()-20):role.start()]):continue
+        after=[doctor for doctor in doctors if 0<=doctor.start()-role.end()<=35]
+        before=[doctor for doctor in doctors if 0<=role.start()-doctor.end()<=160 and any(cue in text[doctor.end():role.start()] for cue in ("מונה","מונתה","משמש","משמשת","הוא","היא",","," - "))]
+        nearby=after or before
+        doctor=min(nearby,key=lambda match:abs(match.start()-role.start())) if nearby else None
+        if not doctor:continue
+        kept=[]
+        for word in doctor.group(1).split():
+            normalized=word.strip(".,:;()[]").lower()
+            if normalized in stop:break
+            kept.append(word.strip(".,:;()[]"))
+        name=clean_name(" ".join(kept))
+        evidence=re.sub(r"\s+"," ",text[max(0,role.start()-160):role.end()+160]).strip()
+        if 2<=len(name.split())<=4 and name not in {item[0] for item in found}:found.append((name,evidence))
+    return found
+
+
+def clinic_manager_person(title, snippet):
+    people=clinic_manager_people(title,snippet)
+    return people[0] if people else ("","")
+
+
+def seed_clalit_manager_sitemap(rows):
+    """Discover managers deterministically from official hospital pages, without a search API."""
+    session=requests.Session()
+    retry=Retry(total=2,connect=2,read=2,status=2,backoff_factor=0.25,status_forcelist=(429,500,502,503,504),allowed_methods=frozenset({"GET"}))
+    session.mount("https://",HTTPAdapter(max_retries=retry,pool_connections=16,pool_maxsize=16))
+    try:
+        index=session.get("https://hospitals.clalit.co.il/sitemap.xml",headers=UA,timeout=30)
+        index.raise_for_status()
+        child_maps=[node.text.strip() for node in ET.fromstring(index.content).iter() if node.tag.endswith("loc") and node.text and "mobile" not in node.text]
+        urls=[]
+        for child in child_maps:
+            response=session.get(child,headers=UA,timeout=60); response.raise_for_status()
+            urls.extend(node.text.strip() for node in ET.fromstring(response.content).iter() if node.tag.endswith("loc") and node.text)
+    except (requests.RequestException,ET.ParseError) as exc:
+        return {"pages_considered":0,"pages_fetched":0,"added_raw":0,"errors":[type(exc).__name__+": "+str(exc)[:120]]}
+    candidates=list(KNOWN_MANAGER_URLS)
+    clinic_segments={"clinic","clinics","outpatient","outpatient-clinics","מרפאה","מרפאות"}
+    for url in dict.fromkeys(urls):
+        parsed=urlparse(url)
+        path=parsed.path.lower()
+        if parsed.netloc.lower().split(":")[0]!="hospitals.clalit.co.il" or "/he/" not in path:continue
+        if path.endswith((".pdf",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".jpg",".jpeg",".png")):continue
+        segments=path.split("/")
+        if any(segment in clinic_segments for segment in segments) or (segments and "clinic" in segments[-1]):candidates.append(url)
+    candidates=list(dict.fromkeys(candidates))
+    known=set(KNOWN_MANAGER_URLS)
+    candidates.sort(key=lambda url:(0 if url in known else 1 if "clinic" in urlparse(url).path.lower().split("/")[-1] else 2,url))
+    def inspect(url):
+        try:
+            # This is broad discovery, not verification. Fail fast here; the
+            # research stage retries the small set of actual candidate pages.
+            response=requests.get(url,headers=UA,timeout=(3,8)); response.raise_for_status()
+            if "text/html" not in response.headers.get("content-type","").lower():return [],False
+            soup=BeautifulSoup(response.text,"html.parser")
+            return [(name,evidence,url) for name,evidence in clinic_manager_people(soup.title.get_text(" ",strip=True) if soup.title else "",soup.get_text(" ",strip=True))],True
+        except requests.RequestException:return [],False
+    found=[]; fetched=0
+    # The site starts returning generic WAF pages under high concurrency. Four
+    # workers remains fast for the filtered set and preserves actual content.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        futures=[pool.submit(inspect,url) for url in candidates]
+        for completed,future in enumerate(concurrent.futures.as_completed(futures),1):
+            items,success=future.result(); found.extend(items); fetched+=success
+            if completed%500==0:print(f"Clinic-manager sitemap {completed}/{len(candidates)}",flush=True)
+    before=len(rows)
+    for name,evidence,url in found:add(rows,name,"clinic_manager",url,"official_sitemap",role_evidence=evidence)
+    return {"pages_considered":len(candidates),"pages_fetched":fetched,"added_raw":len(rows)-before,"errors":[]}
 
 
 def entity_title(title, query):
@@ -146,7 +255,7 @@ def seed_previous(rows):
         add(
             rows, record.get("name"), record.get("category"), record.get("seed_source", ""),
             record.get("seed_type", "previous"), license_number=record.get("license_number", ""),
-            specialty_certificate=record.get("specialty_certificate", ""),
+            specialty_certificate=record.get("specialty_certificate", ""), role_evidence=record.get("role_evidence", ""),
         )
     return len(frame)
 
@@ -256,17 +365,27 @@ def web_discovery(rows):
     for category, queries in DISCOVERY.items():
         before, errors = len(rows), []
         expanded_queries=list(queries)
-        if category in {"family_doctor","clinic_manager","womens_health_center","community_clinic","doula","midwife","lactation","pelvic_floor"}:
+        if category in {"family_doctor","womens_health_center","community_clinic","doula","midwife","lactation","pelvic_floor"}:
             expanded_queries += [f"{query} {region}" for query in queries for region in REGIONS]
         for query in expanded_queries:
             try:
-                for result in engine.text(query, region="il-he", safesearch="moderate", max_results=30, backend="bing,brave") or []:
+                serpapi_key=os.getenv("SERPAPI_KEY","").strip()
+                if serpapi_key:
+                    response=requests.get("https://serpapi.com/search.json",params={"engine":"google","q":query,"gl":"il","hl":"he","num":100,"api_key":serpapi_key},headers=UA,timeout=40)
+                    response.raise_for_status()
+                    results=[{"href":item.get("link",""),"title":item.get("title",""),"body":item.get("snippet","")} for item in response.json().get("organic_results",[])]
+                else:
+                    results=engine.text(query, region="il-he", safesearch="moderate", max_results=30, backend="bing,brave") or []
+                for result in results:
                     source = result.get("href") or result.get("url") or ""
                     if any(bad in urlparse(source).netloc.lower() for bad in BLOCKED):
                         continue
-                    title = entity_title(result.get("title", ""), query)
-                    if title:
-                        add(rows, title, category, source, "web")
+                    if category=="clinic_manager":
+                        title,role_evidence=clinic_manager_person(result.get("title", ""),result.get("body", ""))
+                        if title:add(rows,title,category,source,"web",role_evidence=role_evidence)
+                    else:
+                        title = entity_title(result.get("title", ""), query)
+                        if title:add(rows, title, category, source, "web")
             except Exception as exc:
                 if "No results found" not in str(exc):
                     errors.append(type(exc).__name__ + ": " + str(exc)[:120])
@@ -291,7 +410,12 @@ def main():
     ima = seed_ima(rows, missing_ima) if missing_ima else {"skipped": "full IMA specialty coverage already persisted"}
     if prior_seed_counts.get("ialp", 0) < 300:
         seed_ialp(rows)
-    discovery = {"skipped": "version-5 discovery already persisted"} if discovery_is_current() else web_discovery(rows)
+    if discovery_is_current():
+        discovery={"skipped":f"version-{DISCOVERY_VERSION} discovery already persisted"}
+    else:
+        manager_sitemap=seed_clalit_manager_sitemap(rows)
+        discovery=web_discovery(rows)
+        discovery["clinic_manager_official_sitemap"]=manager_sitemap
     frame = pd.DataFrame(rows)
     if frame.empty:
         raise SystemExit("No targets discovered")
@@ -306,7 +430,7 @@ def main():
             & ~prior_frame.name.map(clean_name).isin(INVALID_ENTITY_NAMES)
         ].copy()
         comparable = comparable[
-            [valid_person_target(name,category,seed_type) for name,category,seed_type in zip(comparable.name,comparable.category,comparable.seed_type)]
+            [valid_person_target(name,category,seed_type,role_evidence) for name,category,seed_type,role_evidence in zip(comparable.name,comparable.category,comparable.seed_type,comparable.get("role_evidence",pd.Series([""]*len(comparable))))]
         ]
         comparable["identity_key"] = [person_identity_key(name, category) for name, category in zip(comparable.name, comparable.category)]
         expected_previous = len(comparable.drop_duplicates(subset=["identity_key", "category"]))
