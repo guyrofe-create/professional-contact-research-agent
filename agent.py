@@ -86,6 +86,8 @@ SEARCH_BACKENDS = os.getenv("SEARCH_BACKENDS", "yahoo,bing,brave").strip()
 RESEARCH_WORKERS = max(1, int(os.getenv("RESEARCH_WORKERS", "4")))
 SEARCH_CALLS = 0
 SEARCH_CONSECUTIVE_FAILURES = 0
+SEARCH_EMPTY_RESULTS_STREAK = 0
+SEARCH_EMPTY_CIRCUIT_THRESHOLD = max(5,int(os.getenv("SEARCH_EMPTY_CIRCUIT_THRESHOLD","30")))
 SEARCH_CIRCUIT_OPEN = False
 SEARCH_LOCK = threading.Lock()
 THREAD_LOCAL = threading.local()
@@ -273,7 +275,7 @@ def usable_identity_seed(seed_source):
     path=urlparse(seed_source).path.lower()
     return not (host(seed_source).endswith("data.gov.il") and ("dataset" in path or "datastore" in path))
 def _search_once(query,max_results):
-    global SEARCH_CALLS,SEARCH_CIRCUIT_OPEN
+    global SEARCH_CALLS,SEARCH_CIRCUIT_OPEN,SEARCH_EMPTY_RESULTS_STREAK
     with SEARCH_LOCK:
         if SEARCH_CIRCUIT_OPEN or SEARCH_CALLS>=SEARCH_CALL_LIMIT:return [],"limit"
         SEARCH_CALLS+=1
@@ -331,6 +333,12 @@ def _search_once(query,max_results):
         except Exception as exc:
             if "No results found" not in str(exc):errors.append(exc); record("ddgs:auto",False)
             else:record("ddgs:auto",True,0)
+    with SEARCH_LOCK:
+        if collected:
+            SEARCH_EMPTY_RESULTS_STREAK=0
+        else:
+            SEARCH_EMPTY_RESULTS_STREAK+=1
+            if SEARCH_EMPTY_RESULTS_STREAK>=SEARCH_EMPTY_CIRCUIT_THRESHOLD:SEARCH_CIRCUIT_OPEN=True
     if collected:return collected[:max_results],"+".join(providers)
     configured=(['google'] if serpapi_key else [])+[f"ddgs:{x}" for x in backends]+(["ddgs:auto"] if "auto" not in backends else [])
     if configured and all(not available(x) for x in configured):
