@@ -248,6 +248,14 @@ def valid_email(email):
     return True
 def local_name_match(email,name):
     local=norm(email.split("@",1)[0]).replace(" ",""); latin=[x for x in tokens(name) if re.search("[a-z]",x) and len(x)>=3]; return bool(latin) and any(x in local for x in latin)
+def email_near_name(email,name,context,max_distance=70):
+    """Keep an address tied to the named person, not the next profile in a team list."""
+    value=str(context or ""); low=value.lower(); needle=str(email or "").lower()
+    position=low.find(needle)
+    if position<0 and "@" in needle:position=low.find(needle.split("@",1)[0])
+    if position<0:return False
+    nearby=value[max(0,position-max_distance):position+len(needle)+max_distance]
+    return name_match(name,nearby)
 def normalized_local(email):
     return re.sub(r"[^a-z]+","",email.split("@",1)[0].lower())
 def role_address(email):
@@ -498,7 +506,7 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
     title_identity=name_match(name,title)
     intro_identity=name_match(name,page_text[:2500])
     inherited_identity=name_match(name,identity_text[:2500])
-    direct_context=name_match(name,context)
+    direct_context=name_match(name,context) and email_near_name(email,name,context)
     identity_blob=identity_text[:5000] if identity_text else page_text[:5000]
     profession=identity_specialty_match(name,category,identity_blob)
     context_profession=category_match(category,context)
@@ -713,7 +721,7 @@ def stored_candidate_still_safe(record):
                 and name_match(name,specialty_proof)
                 and identity_specialty_match(name,category,specialty_proof)
             )
-            direct_proof=name_match(name,evidence) and identity_specialty_match(name,category,evidence)
+            direct_proof=email_near_name(email,name,evidence) and identity_specialty_match(name,category,evidence)
             if (domain in FREE_MAIL or role_address(email)) and not (direct_proof or local_name_match(email,name) or dedicated_personal_route):return False
         if category in PRIMARY_CONTACT_CATEGORIES and str(record.get("extraction_method","")).startswith("linked_") and organization_profile_path(identity):
             if not ((name_match(name,evidence) and identity_specialty_match(name,category,evidence)) or local_name_match(email,name)):return False
