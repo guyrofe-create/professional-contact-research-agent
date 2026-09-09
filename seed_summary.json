@@ -1,7 +1,7 @@
 {
-  "discovery_version": 5,
-  "total": 7187,
-  "previous": 7185,
+  "discovery_version": 8,
+  "total": 7139,
+  "previous": 7187,
   "moh_records_refreshed": 5614,
   "moh_targets_retained": 5066,
   "ima_official_profiles": {
@@ -13,7 +13,6 @@
     "lactation": 451,
     "community_clinic": 130,
     "womens_health_center": 108,
-    "clinic_manager": 48,
     "birth_center": 48,
     "facebook_group_admin": 45,
     "community_manager": 39,
@@ -26,8 +25,8 @@
     "fertility_doctor": 20,
     "pregnancy_podcast": 20,
     "parenting_site": 19,
-    "sperm_bank": 19,
     "fertility_association": 19,
+    "sperm_bank": 19,
     "parenting_center": 18,
     "ivf_unit": 17,
     "childbirth_educator": 16,
@@ -41,6 +40,133 @@
     "fertility_nurse": 7
   },
   "discovery": {
-    "skipped": "version-5 discovery already persisted"
+    "family_doctor": {
+      "added_raw": 4,
+      "errors": []
+    },
+    "clinic_manager": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "womens_health_center": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "community_clinic": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: RequestError: RequestError('error sending request for url (https://www.bing.com/search?q=%D7%9E%D7%A8%D7%A4%D7%90%D7%AA+"
+      ]
+    },
+    "doula": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "midwife": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "childbirth_educator": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "birth_center": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "fertility_doctor": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "ivf_unit": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "fertility_center": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "embryologist": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "fertility_nurse": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "fertility_consultant": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "sperm_bank": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "fertility_preservation": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "fertility_association": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "pelvic_floor": {
+      "added_raw": 0,
+      "errors": [
+        "DDGSException: RequestError: RequestError('error sending request for url (https://www.bing.com/search?q=%D7%A4%D7%99%D7%96%D7%99%D7%95%"
+      ]
+    },
+    "sleep_consultant": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "pregnancy_dietitian": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "parenting_center": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "perinatal_mental_health": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "facebook_group_admin": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "community_manager": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "parenting_site": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "pregnancy_podcast": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "doula_school": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "childbirth_school": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "women_health_creator": {
+      "added_raw": 0,
+      "errors": []
+    },
+    "clinic_manager_official_sitemap": {
+      "pages_considered": 0,
+      "pages_fetched": 0,
+      "added_raw": 0,
+      "errors": [
+        "HTTPError: 403 Client Error: Forbidden for url: https://hospitals.clalit.co.il/sitemap.xml"
+      ]
+    }
   }
 }
