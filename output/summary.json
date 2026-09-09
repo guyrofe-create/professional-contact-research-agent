@@ -86,8 +86,8 @@
       "VERIFIED": 11
     },
     "family_doctor": {
-      "PENDING_ALGO_UPGRADE": 3531,
-      "PENDING_RESEARCH": 25,
+      "PENDING_ALGO_UPGRADE": 3506,
+      "PENDING_RESEARCH": 50,
       "REVIEW_INVALID_TARGET_NAME": 1,
       "VERIFIED": 10
     },
@@ -128,8 +128,8 @@
       "VERIFIED": 5
     },
     "gynecologist": {
-      "PENDING_ALGO_UPGRADE": 2261,
-      "PENDING_RESEARCH": 25,
+      "PENDING_ALGO_UPGRADE": 2236,
+      "PENDING_RESEARCH": 50,
       "REVIEW_INVALID_TARGET_NAME": 0,
       "VERIFIED": 60
     },
