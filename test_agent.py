@@ -192,6 +192,29 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertFalse(agent.valid_person_target_name("משה גיא רופא", "gynecologist"))
         self.assertTrue(agent.valid_person_target_name("משה גיא", "gynecologist", seed_type="moh"))
 
+    def test_specialty_must_be_near_the_exact_physician_name(self):
+        unrelated = "מרכז רפואי נשים מידע נוסף " + (" ניווט" * 80) + " ירון רבינוביץ רופא בכיר בכירורגיית פה ולסת"
+        self.assertFalse(agent.identity_specialty_match("ירון רבינוביץ", "gynecologist", unrelated))
+        self.assertTrue(agent.identity_specialty_match("אריה ישעיה", "gynecologist", "ד״ר אריה ישעיה גינקולוגיה מיילדות ופריון"))
+        self.assertFalse(agent.identity_specialty_match("עפיפה יעקוב", "family_doctor", "ד״ר עפיפה יעקוב מומחית במחלות ריאה ומנהלת מרפאה ראשונית"))
+        self.assertTrue(agent.identity_specialty_match("באסל מועטי", "family_doctor", "ד״ר באסל מועטי מדריך קליני בתחום רפואת המשפחה"))
+
+    def test_linked_sitewide_mailbox_is_not_attributed_to_physician(self):
+        score = agent.candidate_score(
+            "contact@olamkal.com", "https://www.olamkal.com/he/about", "צור קשר", "אודות",
+            "צור קשר", "אירנה אינרמן", "family_doctor", True,
+            "אירנה אינרמן מומחית ברפואת משפחה", "https://www.olamkal.com/he/pro/doctor",
+        )
+        self.assertIsNone(score)
+
+    def test_news_publisher_mailbox_is_not_attributed_to_physician(self):
+        score = agent.candidate_score(
+            "newgalil@gmail.com", "https://g-news.co.il/contact", "לפרסום באתר ובעיתון", "צור קשר",
+            "לפרסום באתר ובעיתון", "אלי רימר", "family_doctor", True,
+            "אלי רימר מומחה ברפואת משפחה", "https://g-news.co.il/story/doctor",
+        )
+        self.assertIsNone(score)
+
     def test_wrong_foreign_email_is_rejected(self):
         score = agent.candidate_score(
             "cep.creditos@arba.gov.ar",

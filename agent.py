@@ -25,7 +25,7 @@ from urllib3.util.retry import Retry
 
 ALGO_VERSION = 13
 PHYSICIAN_SEARCH_VERSION = 6
-VERIFICATION_SCHEMA_VERSION = 2
+VERIFICATION_SCHEMA_VERSION = 3
 PHYSICIAN_CATEGORIES = {"family_doctor", "gynecologist", "fertility_doctor"}
 SEARCH_UPGRADE_CATEGORIES = PHYSICIAN_CATEGORIES | {"clinic_manager"}
 PRIMARY_CONTACT_CATEGORIES = ("gynecologist", "family_doctor", "clinic_manager")
@@ -200,12 +200,27 @@ def directory_site(url):
 def name_match(name,text):
     wanted=tokens(name); hay=set(tokens(text)); needed=len(wanted) if len(wanted)<=2 else len(wanted)-1; return bool(wanted) and sum(x in hay for x in wanted)>=needed
 def category_match(category,text): return any(norm(term) in norm(text) for term in CATEGORY_CONFIG.get(category,{}).get("terms",[]) if norm(term))
+PRIMARY_SPECIALTY_TERMS = {
+    "gynecologist": ("גינקולוג", "גניקולוג", "רופא נשים", "רפואת נשים", "gynecolog", "ob gyn", "obgyn"),
+    "family_doctor": ("רפואת משפחה", "רפואת המשפחה", "רופא משפחה", "רופאת משפחה", "family medicine", "family physician"),
+}
+def identity_specialty_match(name,category,text):
+    """Require an exact physician name and specialty in the same local passage."""
+    if category not in PRIMARY_SPECIALTY_TERMS:return category_match(category,text)
+    words=tokens(text); wanted=set(tokens(name)); needed=len(wanted) if len(wanted)<=2 else len(wanted)-1
+    if not wanted or not words:return False
+    for index,word in enumerate(words):
+        if word not in wanted:continue
+        nearby=" ".join(words[max(0,index-35):index+36])
+        if sum(token in set(nearby.split()) for token in wanted)<needed:continue
+        if any(norm(term) in nearby for term in PRIMARY_SPECIALTY_TERMS[category]):return True
+    return False
 def allowed_identity_page(url,title,page_text,name,category):
     path=urlparse(url).path.lower()
     if any(x in path for x in GENERAL_CONTENT_PATHS): return False
     title_identity=name_match(name,title)
     intro_identity=name_match(name,page_text[:2500])
-    profession=category_match(category,title+" "+page_text[:5000])
+    profession=identity_specialty_match(name,category,title+" "+page_text[:5000])
     if not profession or not (title_identity or intro_identity):return False
     specific_path=any(hint in path for hint in PROFILE_PATH_HINTS) and path not in GENERIC_LIST_PATHS
     if directory_site(url) or large_institution(url):
@@ -483,7 +498,8 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
     intro_identity=name_match(name,page_text[:2500])
     inherited_identity=name_match(name,identity_text[:2500])
     direct_context=name_match(name,context)
-    profession=category_match(category,title+" "+page_text[:5000]) or category_match(category,identity_text[:5000])
+    identity_blob=identity_text[:5000] if identity_text else page_text[:5000]
+    profession=identity_specialty_match(name,category,identity_blob)
     context_profession=category_match(category,context)
     same_domain=related_domains(email_domain,host(url))
     identity_domain_match=bool(identity_url) and related_domains(email_domain,host(identity_url))
@@ -496,6 +512,8 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
         and not large_institution(identity_url) and not organization_profile_path(identity_url)
         and page_email_count<=2
     )
+    identity_path=unquote(urlparse(identity_url).path.lower()).rstrip("/")
+    dedicated_personal_site_route=personal_site_route and identity_path in {"", "/about", "/אודות"}
     free_mail=email_domain in FREE_MAIL
     if not profession or not (verified_site or linked_identity):return None
     if kind=="person":
@@ -507,7 +525,7 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
         if linked_identity and organization_profile_path(identity_url):
             if not ((direct_context and context_profession) or local_name_match(email,name)):return None
         if free_mail:
-            if not (direct_context or local_name_match(email,name) or (personal_site_route and page_email_count<=2)):return None
+            if not (direct_context or local_name_match(email,name) or dedicated_personal_site_route):return None
             return 100 if direct_context else 92
         # A footer/support address from another company is not the person's address,
         # even when the doctor's name appears elsewhere on the same long page.
@@ -520,7 +538,7 @@ def candidate_score(email,url,page_text,title,context,name,category,verified_sit
             if not (direct_context or local_name_match(email,name) or (direct_identity and title_identity)):return None
             return 98 if direct_context else 90
         if role_address(email):
-            if not ((direct_context and (context_profession or title_identity)) or personal_site_route):return None
+            if not ((direct_context and (context_profession or title_identity)) or dedicated_personal_site_route):return None
             return 88 if direct_context else 80
         if not (direct_context or local_name_match(email,name) or direct_identity or personal_site_route):return None
         return 98 if direct_context else 90
@@ -579,7 +597,7 @@ def research(row):
         return base|{"email":"","email_type":"","confidence":0,"source_url":"","status":"REVIEW_INVALID_TARGET_NAME","evidence":"","matched_query":"","extraction_method":"","alternate_emails":"[]","candidate_count":0,"attempted_urls":"[]","last_attempt_at":datetime.now(timezone.utc).isoformat()}
     def add_candidate(score,email,source,evidence,query,method,identity_url,identity_title,identity_text):
         if score is None:return
-        candidates.append((score,email,source,evidence[:500],query,method,identity_url,name_match(name,identity_title+" "+identity_text[:2500]),category_match(category,identity_title+" "+identity_text[:5000]),(identity_title+" "+identity_text[:1000]).strip()))
+        candidates.append((score,email,source,evidence[:500],query,method,identity_url,name_match(name,identity_title+" "+identity_text[:2500]),identity_specialty_match(name,category,identity_title+" "+identity_text[:5000]),(identity_title+" "+identity_text[:1000]).strip()))
     def inspect_hit(hit,depth=0):
         requested=str(hit.get("url","")).strip()
         if not requested or requested in seen_hits or depth>3:return
@@ -672,6 +690,7 @@ def stored_candidate_still_safe(record):
     if str(record.get("status",""))!="VERIFIED":return False
     name=str(record.get("name","")); category=str(record.get("category","")); email=norm_email(str(record.get("email","")))
     source=str(record.get("source_url","")); identity=str(record.get("identity_url",source)); evidence=str(record.get("evidence",""))
+    identity_evidence=str(record.get("identity_evidence","")); specialty_proof=(identity_evidence+" "+evidence).strip()
     kind=CATEGORY_CONFIG.get(category,{}).get("kind","person")
     if not valid_email(email) or directory_site(source) or blocked_url(source) or (identity and blocked_url(identity)):return False
     if kind=="person":
@@ -680,11 +699,21 @@ def stored_candidate_still_safe(record):
             schema=int(record.get("verification_schema_version",0) or 0)
             if schema>=VERIFICATION_SCHEMA_VERSION:
                 if not record.get("identity_name_verified") or not record.get("identity_specialty_verified"):return False
-            elif not (name_match(name,evidence) and category_match(category,evidence)):
+            elif not (name_match(name,specialty_proof) and identity_specialty_match(name,category,specialty_proof)):
                 return False
         domain=email.rsplit("@",1)[1]
+        if category in PRIMARY_CONTACT_CATEGORIES and str(record.get("extraction_method","")).startswith("linked_"):
+            identity_path=unquote(urlparse(identity).path.lower()).rstrip("/")
+            dedicated_personal_route=(
+                related_domains(host(source),host(identity))
+                and identity_path in {"", "/about", "/אודות"}
+                and name_match(name,specialty_proof)
+                and identity_specialty_match(name,category,specialty_proof)
+            )
+            direct_proof=name_match(name,evidence) and identity_specialty_match(name,category,evidence)
+            if (domain in FREE_MAIL or role_address(email)) and not (direct_proof or local_name_match(email,name) or dedicated_personal_route):return False
         if category in PRIMARY_CONTACT_CATEGORIES and str(record.get("extraction_method","")).startswith("linked_") and organization_profile_path(identity):
-            if not ((name_match(name,evidence) and category_match(category,evidence)) or local_name_match(email,name)):return False
+            if not ((name_match(name,evidence) and identity_specialty_match(name,category,evidence)) or local_name_match(email,name)):return False
         if domain not in FREE_MAIL and not (related_domains(domain,host(source)) or related_domains(domain,host(identity)) or local_name_match(email,name)):return False
         if large_institution(source):
             if role_address(email) and not (name_match(name,evidence) and category_match(category,evidence)):return False
