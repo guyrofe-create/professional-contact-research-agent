@@ -27,16 +27,17 @@ IMA_SPECIALTIES = {
     "gynecologist": 20,
     "family_doctor": 99,
 }
-KNOWN_MANAGER_URLS = (
-    "https://hospitals.clalit.co.il/geha/he/med/clinics/Pages/adults.aspx",
-    "https://hospitals.clalit.co.il/soroka/he/med-units/medicine-division/Pages/dermatoclinic.aspx",
-    "https://hospitals.clalit.co.il/emek/he/departmentsandclinics/internal_departments/Pages/mental_health_clinic.aspx",
-    "https://hospitals.clalit.co.il/carmel/he/Departments-and-Outpatient-Clinics-main/Clinical-departments-and-clinics/Pages/pre-surgery.aspx",
-    "https://hospitals.clalit.co.il/kaplan/he/med_units/travel_clinic/Pages/travel_clinic.aspx",
-    "https://hospitals.clalit.co.il/rabin/he/special-medical-services/travelers-clinic-beilinson/Pages/travelers_clinic_beilinson.aspx",
-    "https://hospitals.clalit.co.il/rabin/he/departments-and-clinics/neurology/Pages/multiple_sclerosis_neuro_immunology.aspx",
-    "https://hospitals.clalit.co.il/shalvata/he/children/departments/Pages/childrens_ward.aspx",
-)
+KNOWN_MANAGER_TARGETS = {
+    "שי גור":"https://hospitals.clalit.co.il/geha/he/med/clinics/Pages/adults.aspx",
+    "יוליה ולדמן-גרינשפון":"https://hospitals.clalit.co.il/soroka/he/med-units/medicine-division/Pages/dermatoclinic.aspx",
+    "בועז בלוך":"https://hospitals.clalit.co.il/emek/he/departmentsandclinics/internal_departments/Pages/mental_health_clinic.aspx",
+    "איתן מנגובי":"https://hospitals.clalit.co.il/carmel/he/Departments-and-Outpatient-Clinics-main/Clinical-departments-and-clinics/Pages/pre-surgery.aspx",
+    "אלכס גורי":"https://hospitals.clalit.co.il/kaplan/he/med_units/travel_clinic/Pages/travel_clinic.aspx",
+    "תמר גוטסמן יקותיאלי":"https://hospitals.clalit.co.il/rabin/he/special-medical-services/travelers-clinic-beilinson/Pages/travelers_clinic_beilinson.aspx",
+    "מרק הלמן":"https://hospitals.clalit.co.il/rabin/he/departments-and-clinics/neurology/Pages/multiple_sclerosis_neuro_immunology.aspx",
+    "שומרית דיין-רוזנבלום":"https://hospitals.clalit.co.il/shalvata/he/children/departments/Pages/childrens_ward.aspx",
+}
+KNOWN_MANAGER_URLS=tuple(KNOWN_MANAGER_TARGETS.values())
 EXCLUDED_CATEGORIES = {"instagram_creator"}
 INVALID_ENTITY_NAMES = {
     "ראשי", "אודות", "אודותינו", "הצוות שלנו", "מי אני", "צור קשר", "נשים", "דף הבית",
@@ -273,7 +274,8 @@ def discovery_is_current():
     if not path.exists():
         return False
     try:
-        return json.loads(path.read_text(encoding="utf-8")).get("discovery_version") == DISCOVERY_VERSION
+        summary=json.loads(path.read_text(encoding="utf-8"))
+        return summary.get("discovery_version")==DISCOVERY_VERSION and int(summary.get("categories",{}).get("clinic_manager",0) or 0)>=len(KNOWN_MANAGER_TARGETS)
     except (OSError, ValueError):
         return False
 
@@ -401,6 +403,8 @@ def main():
     for category, names in KNOWN.items():
         for name in names:
             add(rows, name, category, "curated_seed", "curated")
+    for name,url in KNOWN_MANAGER_TARGETS.items():
+        add(rows,name,"clinic_manager",url,"official_curated",role_evidence=f"מנהל המרפאה: ד\"ר {name}")
     moh = seed_moh(rows)
     prior_frame = pd.read_csv("targets.csv").fillna("") if Path("targets.csv").exists() else pd.DataFrame()
     missing_ima = {

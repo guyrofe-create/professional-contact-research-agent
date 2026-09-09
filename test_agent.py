@@ -11,6 +11,17 @@ import seed_targets
 
 
 class IdentityValidationTests(unittest.TestCase):
+    def test_search_circuit_opens_when_provider_silently_returns_only_empty_results(self):
+        original=(agent.SEARCH_CALLS,agent.SEARCH_CIRCUIT_OPEN,agent.SEARCH_EMPTY_RESULTS_STREAK,agent.SEARCH_EMPTY_CIRCUIT_THRESHOLD)
+        try:
+            agent.SEARCH_CALLS=0; agent.SEARCH_CIRCUIT_OPEN=False; agent.SEARCH_EMPTY_RESULTS_STREAK=0; agent.SEARCH_EMPTY_CIRCUIT_THRESHOLD=5
+            empty=MagicMock(); empty.text.return_value=[]
+            with patch.object(agent,"DDGS",return_value=empty):
+                for _ in range(5):agent._search_once('"דנה לוי" רופאת נשים',10)
+            self.assertTrue(agent.SEARCH_CIRCUIT_OPEN)
+        finally:
+            agent.SEARCH_CALLS,agent.SEARCH_CIRCUIT_OPEN,agent.SEARCH_EMPTY_RESULTS_STREAK,agent.SEARCH_EMPTY_CIRCUIT_THRESHOLD=original
+
     def test_recovery_restores_only_safe_verified_rows(self):
         verified={"algo_version":agent.ALGO_VERSION,"physician_search_version":agent.PHYSICIAN_SEARCH_VERSION,"status":"VERIFIED","name":"דנה לוי","category":"gynecologist","email":"dana.levy@gmail.com","source_url":"https://dr-dana.example.co.il/","identity_url":"https://dr-dana.example.co.il/","evidence":"דנה לוי גינקולוגית"}
         with tempfile.TemporaryDirectory() as folder:
