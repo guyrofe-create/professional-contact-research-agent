@@ -481,6 +481,16 @@ class IdentityValidationTests(unittest.TestCase):
         }}
         self.assertEqual([], agent.build_research_queue([row], stored, datetime.now(timezone.utc), 10))
 
+    def test_explicit_force_mode_can_finish_deferred_research_now(self):
+        row = {"name": "דוד כהן", "category": "family_doctor"}
+        stored = {("דוד כהן", "family_doctor"): {
+            "status": "PENDING_RESEARCH", "search_queries": 6, "retry_count": 1,
+            "next_retry_at": "2099-01-01T00:00:00+00:00", "search_fingerprint": "abc",
+        }}
+        with patch.object(agent, "FORCE_DEFERRED_RESEARCH", True):
+            queue = agent.build_research_queue([row], stored, datetime.now(timezone.utc), 10)
+        self.assertEqual("דוד כהן", queue[0]["name"])
+
     def test_physician_search_becomes_terminal_after_bounded_attempts(self):
         row = {
             "name": "דנה לוי", "category": "gynecologist", "seed_source": "",

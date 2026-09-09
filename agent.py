@@ -108,6 +108,7 @@ FETCH_CACHE_DB = os.getenv("FETCH_CACHE_DB","").strip()
 FETCH_CACHE_TTL = int(os.getenv("FETCH_CACHE_TTL","604800"))
 MAX_RESEARCH_ATTEMPTS = max(1, int(os.getenv("MAX_RESEARCH_ATTEMPTS", "4")))
 MAX_UNCHANGED_SEARCHES = max(1, int(os.getenv("MAX_UNCHANGED_SEARCHES", "2")))
+FORCE_DEFERRED_RESEARCH = os.getenv("FORCE_DEFERRED_RESEARCH", "").strip().lower() in {"1", "true", "yes"}
 
 PERSON_ROLE_REJECT = {
     "sales", "marketing", "international", "logistics", "support", "customerservice",
@@ -782,7 +783,10 @@ def build_research_queue(rows,stored,now,max_targets):
             due.append(candidate); continue
         try:retry_at=datetime.fromisoformat(str(previous.get("next_retry_at","")).replace("Z","+00:00"))
         except (ValueError,TypeError):retry_at=now
-        (due if retry_at<=now else deferred).append(candidate if retry_at<=now else (retry_at,candidate))
+        if FORCE_DEFERRED_RESEARCH or retry_at<=now:
+            due.append(candidate)
+        else:
+            deferred.append((retry_at,candidate))
     due.sort(key=lambda row:(int(row.get("retry_count",0) or 0),str(row.get("last_attempt_at",""))))
     fresh_queue=(
         round_robin_rows(category_scope_rows(direct))
