@@ -1,15 +1,15 @@
 {
   "discovery_version": 8,
-  "total": 7139,
-  "previous": 7187,
+  "total": 6992,
+  "previous": 7139,
   "moh_records_refreshed": 5614,
-  "moh_targets_retained": 5066,
+  "moh_targets_retained": 5065,
   "ima_official_profiles": {
     "skipped": "full IMA specialty coverage already persisted"
   },
   "categories": {
-    "family_doctor": 3567,
-    "gynecologist": 2346,
+    "family_doctor": 3414,
+    "gynecologist": 2344,
     "lactation": 451,
     "community_clinic": 130,
     "womens_health_center": 108,
@@ -37,11 +37,12 @@
     "fertility_consultant": 11,
     "perinatal_mental_health": 9,
     "embryologist": 8,
+    "clinic_manager": 8,
     "fertility_nurse": 7
   },
   "discovery": {
     "family_doctor": {
-      "added_raw": 4,
+      "added_raw": 0,
       "errors": []
     },
     "clinic_manager": {
