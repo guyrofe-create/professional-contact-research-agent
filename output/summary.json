@@ -82,8 +82,8 @@
       "VERIFIED": 11
     },
     "family_doctor": {
-      "PENDING_ALGO_UPGRADE": 3211,
-      "PENDING_RESEARCH": 195,
+      "PENDING_ALGO_UPGRADE": 3186,
+      "PENDING_RESEARCH": 220,
       "VERIFIED": 8
     },
     "fertility_association": {
@@ -117,8 +117,8 @@
       "VERIFIED": 5
     },
     "gynecologist": {
-      "PENDING_ALGO_UPGRADE": 2094,
-      "PENDING_RESEARCH": 196,
+      "PENDING_ALGO_UPGRADE": 2069,
+      "PENDING_RESEARCH": 221,
       "VERIFIED": 54
     },
     "ivf_unit": {
