@@ -80,7 +80,7 @@ class IdentityValidationTests(unittest.TestCase):
             return iter([])
         with patch.object(agent,"search_web",side_effect=empty_search):
             result=agent.research(row)
-        self.assertEqual(result["status"],"PENDING_SEARCH_PROVIDER")
+        self.assertEqual(result["status"],"PENDING_RESEARCH")
         self.assertEqual(result["resolution_reason"],"retry_scheduled")
 
     def test_all_doctor_searches_split_hmos_and_target_contact_pages(self):
@@ -99,7 +99,7 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertTrue(any("site:meuhedet.co.il" in query for query in queries))
         self.assertTrue(any("דואר אלקטרוני" in query for query in queries))
 
-    def test_family_doctor_hmo_clinic_route_email_is_accepted(self):
+    def test_family_doctor_does_not_inherit_generic_hmo_contact_page(self):
         score = agent.candidate_score(
             "clinic@clalit.org.il", "https://www.clalit.co.il/clinic/contact",
             "מרפאת הדרים צור קשר clinic@clalit.org.il", "מרפאת הדרים",
@@ -107,7 +107,40 @@ class IdentityValidationTests(unittest.TestCase):
             "דוד כהן מומחה ברפואת משפחה מרפאת הדרים", "https://www.clalit.co.il/doctor/dr-cohen",
             verified_clinic_route=True,
         )
+        self.assertIsNone(score)
+
+    def test_exact_doctor_profile_can_publish_its_clinic_mailbox(self):
+        score = agent.candidate_score(
+            "clinic@clalit.org.il", "https://www.clalit.co.il/doctor/dr-cohen",
+            "דוד כהן מומחה ברפואת משפחה clinic@clalit.org.il", "דוד כהן רפואת משפחה",
+            "דוד כהן מומחה ברפואת משפחה clinic@clalit.org.il", "דוד כהן", "family_doctor", True,
+            "דוד כהן מומחה ברפואת משפחה", "https://www.clalit.co.il/doctor/dr-cohen",
+        )
         self.assertGreaterEqual(score, 75)
+
+    def test_new_verified_record_requires_name_and_specialty_proof(self):
+        record={
+            "algo_version":agent.ALGO_VERSION,"verification_schema_version":agent.VERIFICATION_SCHEMA_VERSION,
+            "identity_name_verified":True,"identity_specialty_verified":True,
+            "status":"VERIFIED","name":"דוד כהן","category":"gynecologist",
+            "email":"david.cohen@gmail.com","source_url":"https://dr-cohen.example.co.il/",
+            "identity_url":"https://dr-cohen.example.co.il/","evidence":"דוד כהן רופא נשים",
+        }
+        self.assertTrue(agent.stored_candidate_still_safe(record))
+        record["identity_specialty_verified"]=False
+        self.assertFalse(agent.stored_candidate_still_safe(record))
+
+    def test_legacy_wrong_specialty_and_publisher_contacts_are_demoted(self):
+        rows=[
+            {"name":"דוד מיכאל","category":"gynecologist","email":"mdavid652@gmail.com","source_url":"https://doctors.example.co.il/dermatology/michael-david","identity_url":"https://doctors.example.co.il/dermatology/michael-david","evidence":"פרופ מיכאל דוד מומחה לרפואת עור"},
+            {"name":"דורון אביטל","category":"gynecologist","email":"afulanet@gmail.com","source_url":"https://afulanet.co.il/contact","identity_url":"https://afulanet.co.il/story/doron-avital","evidence":"צור קשר עם מערכת החדשות"},
+            {"name":"דן זאבי","category":"gynecologist","email":"edt.eilat@gmail.com","source_url":"https://eilat-guide.co.il/contact","identity_url":"https://eilat-guide.co.il/doctor/dan","evidence":"צור קשר מדריך העסקים"},
+            {"name":"אורנה שטטר","category":"family_doctor","email":"fps.israel@gmail.com","source_url":"https://fps.org.il/contact","identity_url":"https://fps.org.il/therapists/orna","evidence":"האגודה לפסיכותרפיה ממוקדת"},
+        ]
+        for row in rows:
+            with self.subTest(email=row["email"]):
+                migrated=agent.migrate_checkpoint_row({"algo_version":12,"status":"VERIFIED"}|row)
+                self.assertEqual("PENDING_ALGO_UPGRADE",migrated["status"])
 
     def test_email_in_exact_identity_search_snippet_is_accepted_when_page_is_dynamic(self):
         row={"name":"דוד כהן","category":"family_doctor","seed_source":""}
@@ -487,7 +520,7 @@ class IdentityValidationTests(unittest.TestCase):
         self.assertEqual("info@harechem.com", agent.norm_email("%20info@harechem.com"))
         self.assertTrue(agent.valid_email(agent.norm_email("%20info@harechem.com")))
 
-    def test_shared_role_address_is_preserved_but_flagged_on_search_upgrade(self):
+    def test_shared_role_address_is_retained_as_non_personalized_route(self):
         old = {
             "algo_version": agent.ALGO_VERSION, "physician_search_version": agent.PHYSICIAN_SEARCH_VERSION - 1,
             "name": "דוד כהן", "category": "gynecologist",
@@ -495,12 +528,14 @@ class IdentityValidationTests(unittest.TestCase):
             "source_url": "https://hospital.org.il/doctors/dr-cohen",
             "identity_url": "https://hospital.org.il/doctors/dr-cohen",
             "evidence": "דוד כהן רופא נשים clinic@hospital.org.il",
+            "verification_schema_version": agent.VERIFICATION_SCHEMA_VERSION,
+            "identity_name_verified": True, "identity_specialty_verified": True,
             "shared_target_count": 12,
         }
         migrated = agent.migrate_checkpoint_row(old)
         self.assertEqual(agent.ALGO_VERSION, migrated["algo_version"])
         self.assertEqual("VERIFIED", migrated["status"])
-        self.assertTrue(migrated["verification_review_required"])
+        self.assertFalse(migrated["verification_review_required"])
         self.assertEqual("clinic@hospital.org.il", migrated["email"])
 
     def test_non_physician_search_keeps_trying_after_unusable_hits(self):
@@ -597,6 +632,28 @@ class IdentityValidationTests(unittest.TestCase):
         seed_targets.add(rows, "נועה רז מנהלת מרפאה", "clinic_manager", "https://clinic.example.co.il/team", "web")
         seed_targets.add(rows, "מנהלת מרפאה מכבי", "clinic_manager", "https://clinic.example.co.il/", "web")
         self.assertEqual(["נועה רז מנהלת מרפאה"], [row["name"] for row in rows])
+
+    def test_clinic_manager_discovery_extracts_a_named_person_only(self):
+        name,evidence=seed_targets.clinic_manager_person(
+            'ד״ר נועה רז מונתה למנהלת המרפאה',
+            'ד״ר נועה רז, מומחית ברפואת משפחה, מונתה למנהלת המרפאה של כללית בעיר.',
+        )
+        self.assertEqual("נועה רז",name)
+        self.assertIn("מנהלת המרפאה",evidence)
+        self.assertEqual(("",""),seed_targets.clinic_manager_person("מרפאת פתח תקווה","שעות פתיחה וטלפון"))
+        rows=[]
+        seed_targets.add(rows,name,"clinic_manager","https://clalit.example/clinic","web",role_evidence=evidence)
+        self.assertEqual(1,len(rows))
+
+    def test_clinic_manager_page_extracts_every_nearby_named_manager(self):
+        people=seed_targets.clinic_manager_people(
+            "מרפאות מומחים",
+            'מנהל המרפאה: ד״ר שי גור. מידע למטופלים. מנהלת מרפאת העור: ד"ר יוליה ולדמן-גרינשפון.',
+        )
+        self.assertEqual(["שי גור","יוליה ולדמן-גרינשפון"],[name for name,_ in people])
+        self.assertTrue(all("מרפא" in evidence for _,evidence in people))
+        people=seed_targets.clinic_manager_people("צוות המרפאה",'מנהל המרפאה: ד"ר שי גור. ד"ר דרור וייס סגן מנהל המרפאה וראש צוות. ד"ר מעינית סיגלר.')
+        self.assertEqual(["שי גור"],[name for name,_ in people])
 
 
 if __name__ == "__main__":

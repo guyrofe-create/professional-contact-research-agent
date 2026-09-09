@@ -1,6 +1,7 @@
 from pathlib import Path
 import csv
 import json
+import os
 
 import agent
 import export_outputs
@@ -27,9 +28,13 @@ def main():
         for line in retired.read_text(encoding="utf-8", errors="ignore").splitlines():
             try: retired_verified += json.loads(line).get("status") == "VERIFIED"
             except Exception: pass
-    state = f"completed={completed}\nverified={verified}\nretired_verified_preserved={retired_verified}\npreserved_verified_total={verified+retired_verified}\ntouched={len(latest)}\npending={len(pending)}\ntargets={targets}\nalgo_version={agent.ALGO_VERSION}\n"
+    focus={x.strip() for x in os.getenv("RESEARCH_FOCUS_CATEGORIES","").split(",") if x.strip()}
+    focus_rows={key:row for key,row in latest.items() if not focus or row.get("category") in focus}
+    focus_pending=sum(str(row.get("status","")).startswith("PENDING") for row in focus_rows.values())
+    focus_completed=len(focus_rows)-focus_pending
+    state = f"completed={completed}\nverified={verified}\nretired_verified_preserved={retired_verified}\npreserved_verified_total={verified+retired_verified}\ntouched={len(latest)}\npending={len(pending)}\ntargets={targets}\nfocus_categories={','.join(sorted(focus))}\nfocus_completed={focus_completed}\nfocus_pending={focus_pending}\nfocus_targets={len(focus_rows)}\nalgo_version={agent.ALGO_VERSION}\n"
     Path("output/progress.txt").write_text(state, encoding="utf-8")
-    Path("output/COMPLETE.txt").write_text(("COMPLETE" if targets and completed >= targets else "IN_PROGRESS") + "\n" + state, encoding="utf-8")
+    Path("output/COMPLETE.txt").write_text(("COMPLETE" if focus_rows and focus_pending==0 else "IN_PROGRESS") + "\n" + state, encoding="utf-8")
     export_outputs.main()
 
 

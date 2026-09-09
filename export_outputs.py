@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -82,6 +83,10 @@ def main():
     OUT.mkdir(exist_ok=True)
     FINAL.mkdir(exist_ok=True)
 
+    prior_summary = {}
+    if (OUT / 'summary.json').exists():
+        try: prior_summary = json.loads((OUT / 'summary.json').read_text(encoding='utf-8'))
+        except (OSError, ValueError): pass
     frame = read_checkpoint()
     frame = frame.sort_values(['priority', 'status', 'confidence'], ascending=[True, True, False])
     frame = frame.drop_duplicates(subset=['name', 'category'], keep='first')
@@ -105,6 +110,10 @@ def main():
         safe_partition = sanitize_frame(partition)
         safe_partition.to_csv(OUT / f'contacts_{name}.csv', index=False, encoding='utf-8-sig')
         safe_partition.to_excel(OUT / f'contacts_{name}.xlsx', index=False)
+    primary = found[found.category.isin(agent.PRIMARY_CONTACT_CATEGORIES)].copy() if not found.empty else found.copy()
+    safe_primary = sanitize_frame(primary)
+    safe_primary.to_csv(OUT / 'contacts_primary.csv', index=False, encoding='utf-8-sig')
+    safe_primary.to_excel(OUT / 'contacts_primary.xlsx', index=False)
 
     review = sanitize_frame(frame[frame.status.str.startswith('REVIEW')].copy())
     review.to_excel(OUT / 'review.xlsx', index=False)
@@ -113,8 +122,16 @@ def main():
     retired_verified = retired_verified_rows()
     active_verified = int((frame.status == 'VERIFIED').sum())
     fanout = expanded.groupby('email').size() if not expanded.empty else pd.Series(dtype=int)
+    focus={x.strip() for x in os.getenv('RESEARCH_FOCUS_CATEGORIES','').split(',') if x.strip()}
+    focus_frame=frame[frame.category.isin(focus)] if focus else frame
     summary = {
         'algo_version': ALGO_VERSION,
+        'physician_search_version': agent.PHYSICIAN_SEARCH_VERSION,
+        'focus_categories': sorted(focus),
+        'focus_targets': int(len(focus_frame)),
+        'focus_resolved': int((~focus_frame.status.str.startswith('PENDING')).sum()),
+        'focus_pending': int(focus_frame.status.str.startswith('PENDING').sum()),
+        'focus_verified': int((focus_frame.status == 'VERIFIED').sum()),
         'total_targets': int(target_total),
         'touched_targets': int(len(frame)),
         'resolved_targets': int((~frame.status.str.startswith('PENDING')).sum()),
@@ -125,6 +142,7 @@ def main():
         'pending': int(frame.status.str.startswith('PENDING').sum()),
         'review': int(frame.status.str.startswith('REVIEW').sum()),
         'unique_emails': int(found.email.nunique()),
+        'primary_unique_emails': int(primary.email.nunique()) if not primary.empty else 0,
         'personal_unique_emails': int(personal.email.nunique()) if not personal.empty else 0,
         'organization_unique_emails': int(organization.email.nunique()) if not organization.empty else 0,
         'shared_unique_emails': int(shared.email.nunique()) if not shared.empty else 0,
@@ -136,6 +154,10 @@ def main():
         'institutional_emails': int((found.email_type == 'CLINIC_OR_ORGANIZATION').sum()) if not found.empty else 0,
         'by_category': frame.groupby('category').status.value_counts().unstack(fill_value=0).to_dict('index'),
     }
+    # finalize_state runs after the researcher. Preserve operational metrics so
+    # a green workflow cannot hide zero yield or provider/HTTP failures.
+    for key in ('processed_this_run','verified_this_run','elapsed_seconds','search_calls','search_circuit_open','provider_stats','http_stats'):
+        if key in prior_summary: summary[key]=prior_summary[key]
     (OUT / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
 
     # Validate the generated workbooks before promoting them to FINAL.
@@ -144,6 +166,7 @@ def main():
     validate_xlsx(OUT / 'contacts_personal.xlsx', expected_min_rows=len(personal))
     validate_xlsx(OUT / 'contacts_organization.xlsx', expected_min_rows=len(organization))
     validate_xlsx(OUT / 'contacts_shared.xlsx', expected_min_rows=len(shared))
+    validate_xlsx(OUT / 'contacts_primary.xlsx', expected_min_rows=len(primary))
     validate_xlsx(OUT / 'review.xlsx', expected_min_rows=len(review))
 
     completion = (OUT / 'COMPLETE.txt').read_text(encoding='utf-8', errors='ignore') if (OUT / 'COMPLETE.txt').exists() else ''
