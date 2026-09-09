@@ -270,7 +270,7 @@ class IdentityValidationTests(unittest.TestCase):
             "https://drcohen.co.il/contact",
             "דוד כהן מומחה ביילוד וגינקולוגיה מרפאה פרטית",
             "דוד כהן רופא נשים",
-            "צור קשר למרפאת דוד כהן",
+            "צור קשר למרפאת דוד כהן info@drcohen.co.il",
             "דוד כהן",
             "gynecologist",
             True,
@@ -357,6 +357,24 @@ class IdentityValidationTests(unittest.TestCase):
         email, context, _ = next(x for x in found if x[0] == "adam@examplehospital.org.il")
         self.assertNotIn("אבי צפריר", context)
         self.assertIsNone(agent.candidate_score(email, "https://hospital.org.il/doctors", text, title, context, "אבי צפריר", "gynecologist", False))
+
+    def test_team_page_does_not_assign_next_practitioners_email(self):
+        context = (
+            "ד״ר עמוס ריטר מומחה ברפואת משפחה amosrit@gmail.com "
+            "סיון לוין פסיכולוגית שיקומית ומדריכה 052-3776735 siviros@hotmail.com"
+        )
+        good = agent.candidate_score(
+            "amosrit@gmail.com", "https://clinic.example.co.il/contact", context, "צוות הקליניקה",
+            context, "עמוס ריטר", "family_doctor", True,
+            "עמוס ריטר מומחה ברפואת משפחה", "https://clinic.example.co.il/team/dr-ritter",
+        )
+        wrong = agent.candidate_score(
+            "siviros@hotmail.com", "https://clinic.example.co.il/contact", context, "צוות הקליניקה",
+            context, "עמוס ריטר", "family_doctor", True,
+            "עמוס ריטר מומחה ברפואת משפחה", "https://clinic.example.co.il/team/dr-ritter",
+        )
+        self.assertIsNotNone(good)
+        self.assertIsNone(wrong)
 
     def test_moh_dataset_is_provenance_not_identity_page(self):
         self.assertFalse(agent.usable_identity_seed(
