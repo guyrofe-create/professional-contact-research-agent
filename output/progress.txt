@@ -1,12 +1,12 @@
-completed=2634
+completed=2683
 verified=699
 retired_verified_preserved=4
 preserved_verified_total=703
 touched=7000
-pending=4366
+pending=4317
 targets=7000
 focus_categories=clinic_manager,family_doctor,gynecologist
-focus_completed=1998
-focus_pending=3776
+focus_completed=2047
+focus_pending=3727
 focus_targets=5774
 algo_version=13
