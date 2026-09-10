@@ -7,17 +7,17 @@
     "gynecologist"
   ],
   "focus_targets": 5774,
-  "focus_resolved": 1112,
-  "focus_pending": 4662,
-  "focus_verified": 67,
+  "focus_resolved": 1108,
+  "focus_pending": 4666,
+  "focus_verified": 63,
   "total_targets": 7000,
   "touched_targets": 7000,
-  "resolved_targets": 1748,
-  "verified": 703,
+  "resolved_targets": 1744,
+  "verified": 699,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 707,
+  "preserved_verified_total": 703,
   "not_verified": 1045,
-  "pending": 5252,
+  "pending": 5256,
   "review": 0,
   "unique_emails": 425,
   "primary_unique_emails": 61,
@@ -103,10 +103,10 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 316,
-      "PENDING_ALGO_UPGRADE": 391,
+      "PENDING_ALGO_UPGRADE": 392,
       "PENDING_RESEARCH": 2695,
-      "PENDING_SEARCH_PROVIDER": 6,
-      "VERIFIED": 12
+      "PENDING_SEARCH_PROVIDER": 9,
+      "VERIFIED": 8
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -152,9 +152,9 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 729,
-      "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 1561,
-      "PENDING_SEARCH_PROVIDER": 1,
+      "PENDING_ALGO_UPGRADE": 119,
+      "PENDING_RESEARCH": 1440,
+      "PENDING_SEARCH_PROVIDER": 3,
       "VERIFIED": 55
     },
     "ivf_unit": {
@@ -249,41 +249,41 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 2004,
-  "verified_this_run": 2,
-  "elapsed_seconds": 1228.9,
+  "processed_this_run": 2005,
+  "verified_this_run": 4,
+  "elapsed_seconds": 1132.3,
   "search_calls": 12000,
   "search_circuit_open": false,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 1273,
-      "successes": 1121,
-      "errors": 152,
-      "results": 678
+      "calls": 1251,
+      "successes": 1115,
+      "errors": 136,
+      "results": 729
     },
     "ddgs:bing": {
       "calls": 12000,
       "successes": 12000,
       "errors": 0,
-      "results": 115079
+      "results": 112583
     },
     "ddgs:brave": {
-      "calls": 11869,
-      "successes": 11869,
-      "errors": 0,
+      "calls": 11839,
+      "successes": 11838,
+      "errors": 1,
       "results": 5
     },
     "ddgs:auto": {
-      "calls": 3,
-      "successes": 3,
+      "calls": 2,
+      "successes": 2,
       "errors": 0,
-      "results": 32
+      "results": 20
     }
   },
   "http_stats": {
-    "requests": 501,
-    "success": 302,
-    "failures": 199,
-    "cache_hits": 50
+    "requests": 490,
+    "success": 306,
+    "failures": 184,
+    "cache_hits": 105
   }
 }
