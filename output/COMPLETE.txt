@@ -1,13 +1,13 @@
 IN_PROGRESS
-completed=1196
+completed=1221
 verified=703
 retired_verified_preserved=4
 preserved_verified_total=707
 touched=7000
-pending=5804
+pending=5779
 targets=7000
 focus_categories=clinic_manager,family_doctor,gynecologist
-focus_completed=560
-focus_pending=5214
+focus_completed=585
+focus_pending=5189
 focus_targets=5774
 algo_version=13
