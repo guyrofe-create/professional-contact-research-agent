@@ -1,7 +1,7 @@
 {
   "discovery_version": 8,
   "total": 7000,
-  "previous": 6992,
+  "previous": 7000,
   "moh_records_refreshed": 5622,
   "moh_targets_retained": 5073,
   "ima_official_profiles": {
