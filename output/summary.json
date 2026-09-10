@@ -7,29 +7,29 @@
     "gynecologist"
   ],
   "focus_targets": 5774,
-  "focus_resolved": 2560,
-  "focus_pending": 3214,
-  "focus_verified": 64,
+  "focus_resolved": 2579,
+  "focus_pending": 3195,
+  "focus_verified": 66,
   "total_targets": 7000,
   "touched_targets": 7000,
-  "resolved_targets": 3196,
-  "verified": 700,
+  "resolved_targets": 3215,
+  "verified": 702,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 704,
-  "not_verified": 2496,
-  "pending": 3804,
+  "preserved_verified_total": 706,
+  "not_verified": 2513,
+  "pending": 3785,
   "review": 0,
-  "unique_emails": 426,
-  "primary_unique_emails": 62,
-  "personal_unique_emails": 78,
-  "organization_unique_emails": 348,
+  "unique_emails": 428,
+  "primary_unique_emails": 64,
+  "personal_unique_emails": 79,
+  "organization_unique_emails": 349,
   "shared_unique_emails": 244,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 7,
-  "personalization_safe_emails": 78,
-  "organization_or_shared_routes": 348,
-  "direct_emails": 386,
-  "institutional_emails": 43,
+  "personalization_safe_emails": 79,
+  "organization_or_shared_routes": 349,
+  "direct_emails": 388,
+  "institutional_emails": 44,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -102,11 +102,11 @@
       "VERIFIED": 11
     },
     "family_doctor": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 771,
+      "NO_VERIFIED_PUBLIC_EMAIL": 772,
       "PENDING_ALGO_UPGRADE": 30,
-      "PENDING_RESEARCH": 2608,
+      "PENDING_RESEARCH": 2606,
       "PENDING_SEARCH_PROVIDER": 2,
-      "VERIFIED": 9
+      "VERIFIED": 10
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -151,11 +151,11 @@
       "VERIFIED": 5
     },
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 1725,
+      "NO_VERIFIED_PUBLIC_EMAIL": 1741,
       "PENDING_ALGO_UPGRADE": 119,
-      "PENDING_RESEARCH": 442,
+      "PENDING_RESEARCH": 425,
       "PENDING_SEARCH_PROVIDER": 5,
-      "VERIFIED": 55
+      "VERIFIED": 56
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
