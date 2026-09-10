@@ -6,18 +6,18 @@
     "family_doctor",
     "gynecologist"
   ],
-  "focus_targets": 5766,
-  "focus_resolved": 518,
-  "focus_pending": 5248,
-  "focus_verified": 63,
-  "total_targets": 6992,
-  "touched_targets": 6992,
-  "resolved_targets": 1154,
-  "verified": 699,
+  "focus_targets": 5774,
+  "focus_resolved": 519,
+  "focus_pending": 5255,
+  "focus_verified": 64,
+  "total_targets": 7000,
+  "touched_targets": 7000,
+  "resolved_targets": 1155,
+  "verified": 700,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 703,
+  "preserved_verified_total": 704,
   "not_verified": 455,
-  "pending": 5838,
+  "pending": 5845,
   "review": 0,
   "unique_emails": 425,
   "primary_unique_emails": 61,
@@ -103,10 +103,10 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 308,
-      "PENDING_ALGO_UPGRADE": 1383,
-      "PENDING_RESEARCH": 1709,
+      "PENDING_ALGO_UPGRADE": 1366,
+      "PENDING_RESEARCH": 1731,
       "PENDING_SEARCH_PROVIDER": 6,
-      "VERIFIED": 8
+      "VERIFIED": 9
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -152,8 +152,8 @@
     },
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 147,
-      "PENDING_ALGO_UPGRADE": 360,
-      "PENDING_RESEARCH": 1776,
+      "PENDING_ALGO_UPGRADE": 343,
+      "PENDING_RESEARCH": 1795,
       "PENDING_SEARCH_PROVIDER": 6,
       "VERIFIED": 55
     },
