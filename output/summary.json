@@ -7,28 +7,28 @@
     "gynecologist"
   ],
   "focus_targets": 5774,
-  "focus_resolved": 2196,
-  "focus_pending": 3578,
-  "focus_verified": 63,
+  "focus_resolved": 2245,
+  "focus_pending": 3529,
+  "focus_verified": 64,
   "total_targets": 7000,
   "touched_targets": 7000,
-  "resolved_targets": 2832,
-  "verified": 699,
+  "resolved_targets": 2881,
+  "verified": 700,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 703,
-  "not_verified": 2133,
-  "pending": 4168,
+  "preserved_verified_total": 704,
+  "not_verified": 2181,
+  "pending": 4119,
   "review": 0,
-  "unique_emails": 425,
-  "primary_unique_emails": 61,
-  "personal_unique_emails": 77,
+  "unique_emails": 426,
+  "primary_unique_emails": 62,
+  "personal_unique_emails": 78,
   "organization_unique_emails": 348,
   "shared_unique_emails": 244,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 7,
-  "personalization_safe_emails": 77,
+  "personalization_safe_emails": 78,
   "organization_or_shared_routes": 348,
-  "direct_emails": 385,
+  "direct_emails": 386,
   "institutional_emails": 43,
   "by_category": {
     "birth_center": {
@@ -102,11 +102,11 @@
       "VERIFIED": 11
     },
     "family_doctor": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 650,
+      "NO_VERIFIED_PUBLIC_EMAIL": 674,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 2759,
+      "PENDING_RESEARCH": 2734,
       "PENDING_SEARCH_PROVIDER": 3,
-      "VERIFIED": 8
+      "VERIFIED": 9
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -151,9 +151,9 @@
       "VERIFIED": 5
     },
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 1483,
+      "NO_VERIFIED_PUBLIC_EMAIL": 1507,
       "PENDING_ALGO_UPGRADE": 119,
-      "PENDING_RESEARCH": 686,
+      "PENDING_RESEARCH": 662,
       "PENDING_SEARCH_PROVIDER": 3,
       "VERIFIED": 55
     },
