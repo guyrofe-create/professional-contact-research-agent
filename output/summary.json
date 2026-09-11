@@ -7,17 +7,17 @@
     "gynecologist"
   ],
   "focus_targets": 5774,
-  "focus_resolved": 5073,
-  "focus_pending": 701,
-  "focus_verified": 80,
+  "focus_resolved": 5074,
+  "focus_pending": 700,
+  "focus_verified": 81,
   "total_targets": 7000,
   "touched_targets": 7000,
-  "resolved_targets": 5709,
-  "verified": 716,
+  "resolved_targets": 5710,
+  "verified": 717,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 720,
+  "preserved_verified_total": 721,
   "not_verified": 4993,
-  "pending": 1291,
+  "pending": 1290,
   "review": 0,
   "unique_emails": 439,
   "primary_unique_emails": 76,
@@ -94,8 +94,8 @@
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2760,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 637,
-      "VERIFIED": 23
+      "PENDING_RESEARCH": 636,
+      "VERIFIED": 24
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
