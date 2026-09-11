@@ -7,17 +7,17 @@
     "gynecologist"
   ],
   "focus_targets": 5774,
-  "focus_resolved": 5092,
-  "focus_pending": 682,
-  "focus_verified": 83,
+  "focus_resolved": 5091,
+  "focus_pending": 683,
+  "focus_verified": 81,
   "total_targets": 7000,
   "touched_targets": 7000,
-  "resolved_targets": 5728,
-  "verified": 719,
+  "resolved_targets": 5727,
+  "verified": 717,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 723,
-  "not_verified": 5009,
-  "pending": 1272,
+  "preserved_verified_total": 721,
+  "not_verified": 5010,
+  "pending": 1273,
   "review": 0,
   "unique_emails": 441,
   "primary_unique_emails": 78,
@@ -92,10 +92,10 @@
       "VERIFIED": 11
     },
     "family_doctor": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 2773,
-      "PENDING_ALGO_UPGRADE": 2,
-      "PENDING_RESEARCH": 619,
-      "VERIFIED": 26
+      "NO_VERIFIED_PUBLIC_EMAIL": 2774,
+      "PENDING_ALGO_UPGRADE": 5,
+      "PENDING_RESEARCH": 617,
+      "VERIFIED": 24
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -218,41 +218,41 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 292,
-  "verified_this_run": 16,
+  "processed_this_run": 253,
+  "verified_this_run": 2,
   "elapsed_seconds": 378.4,
-  "search_calls": 1677,
+  "search_calls": 1516,
   "search_circuit_open": false,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 1219,
-      "successes": 1123,
-      "errors": 96,
-      "results": 1218
+      "calls": 1470,
+      "successes": 1384,
+      "errors": 86,
+      "results": 1546
     },
     "ddgs:bing": {
-      "calls": 1677,
-      "successes": 1677,
+      "calls": 1516,
+      "successes": 1516,
       "errors": 0,
-      "results": 16358
+      "results": 14910
     },
     "ddgs:brave": {
-      "calls": 1488,
-      "successes": 1488,
+      "calls": 1283,
+      "successes": 1283,
       "errors": 0,
       "results": 5
     },
     "ddgs:auto": {
-      "calls": 8,
-      "successes": 7,
-      "errors": 1,
-      "results": 71
+      "calls": 1,
+      "successes": 1,
+      "errors": 0,
+      "results": 10
     }
   },
   "http_stats": {
-    "requests": 596,
-    "success": 327,
-    "failures": 269,
-    "cache_hits": 466
+    "requests": 494,
+    "success": 80,
+    "failures": 414,
+    "cache_hits": 677
   }
 }
