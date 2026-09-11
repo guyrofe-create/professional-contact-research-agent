@@ -7,29 +7,29 @@
     "gynecologist"
   ],
   "focus_targets": 5774,
-  "focus_resolved": 5009,
-  "focus_pending": 765,
-  "focus_verified": 68,
+  "focus_resolved": 5044,
+  "focus_pending": 730,
+  "focus_verified": 70,
   "total_targets": 7000,
   "touched_targets": 7000,
-  "resolved_targets": 5645,
-  "verified": 704,
+  "resolved_targets": 5680,
+  "verified": 706,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 708,
-  "not_verified": 4941,
-  "pending": 1355,
+  "preserved_verified_total": 710,
+  "not_verified": 4974,
+  "pending": 1320,
   "review": 0,
-  "unique_emails": 430,
-  "primary_unique_emails": 66,
+  "unique_emails": 431,
+  "primary_unique_emails": 67,
   "personal_unique_emails": 79,
-  "organization_unique_emails": 351,
+  "organization_unique_emails": 352,
   "shared_unique_emails": 244,
   "max_email_target_fanout": 229,
   "emails_with_fanout_over_5": 7,
   "personalization_safe_emails": 79,
-  "organization_or_shared_routes": 351,
+  "organization_or_shared_routes": 352,
   "direct_emails": 389,
-  "institutional_emails": 44,
+  "institutional_emails": 45,
   "by_category": {
     "birth_center": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -50,9 +50,9 @@
       "VERIFIED": 5
     },
     "clinic_manager": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 0,
+      "NO_VERIFIED_PUBLIC_EMAIL": 4,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 8,
+      "PENDING_RESEARCH": 4,
       "VERIFIED": 0
     },
     "community_clinic": {
@@ -93,9 +93,9 @@
     },
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2760,
-      "PENDING_ALGO_UPGRADE": 1,
+      "PENDING_ALGO_UPGRADE": 0,
       "PENDING_RESEARCH": 647,
-      "VERIFIED": 12
+      "VERIFIED": 13
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -134,10 +134,10 @@
       "VERIFIED": 5
     },
     "gynecologist": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 2181,
+      "NO_VERIFIED_PUBLIC_EMAIL": 2210,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 109,
-      "VERIFIED": 56
+      "PENDING_RESEARCH": 79,
+      "VERIFIED": 57
     },
     "ivf_unit": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
