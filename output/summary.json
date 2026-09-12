@@ -7,17 +7,17 @@
     "gynecologist"
   ],
   "focus_targets": 5774,
-  "focus_resolved": 5199,
-  "focus_pending": 575,
-  "focus_verified": 82,
+  "focus_resolved": 5202,
+  "focus_pending": 572,
+  "focus_verified": 81,
   "total_targets": 7000,
   "touched_targets": 7000,
-  "resolved_targets": 5835,
-  "verified": 718,
+  "resolved_targets": 5838,
+  "verified": 717,
   "retired_verified_preserved": 4,
-  "preserved_verified_total": 722,
-  "not_verified": 5117,
-  "pending": 1165,
+  "preserved_verified_total": 721,
+  "not_verified": 5121,
+  "pending": 1162,
   "review": 0,
   "unique_emails": 441,
   "primary_unique_emails": 78,
@@ -92,10 +92,10 @@
       "VERIFIED": 11
     },
     "family_doctor": {
-      "NO_VERIFIED_PUBLIC_EMAIL": 2881,
-      "PENDING_ALGO_UPGRADE": 4,
-      "PENDING_RESEARCH": 510,
-      "VERIFIED": 25
+      "NO_VERIFIED_PUBLIC_EMAIL": 2885,
+      "PENDING_ALGO_UPGRADE": 5,
+      "PENDING_RESEARCH": 506,
+      "VERIFIED": 24
     },
     "fertility_association": {
       "NO_VERIFIED_PUBLIC_EMAIL": 0,
@@ -218,35 +218,35 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 12,
+  "processed_this_run": 161,
   "verified_this_run": 5,
-  "elapsed_seconds": 23.1,
-  "search_calls": 47,
+  "elapsed_seconds": 238.7,
+  "search_calls": 942,
   "search_circuit_open": false,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 47,
-      "successes": 47,
+      "calls": 942,
+      "successes": 942,
       "errors": 0,
-      "results": 83
+      "results": 1206
     },
     "ddgs:bing": {
-      "calls": 47,
-      "successes": 47,
+      "calls": 942,
+      "successes": 942,
       "errors": 0,
-      "results": 458
+      "results": 9159
     },
     "ddgs:brave": {
-      "calls": 33,
-      "successes": 33,
+      "calls": 760,
+      "successes": 760,
       "errors": 0,
-      "results": 4
+      "results": 5
     }
   },
   "http_stats": {
-    "requests": 28,
-    "success": 11,
-    "failures": 17,
-    "cache_hits": 47
+    "requests": 355,
+    "success": 50,
+    "failures": 305,
+    "cache_hits": 581
   }
 }
