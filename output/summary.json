@@ -218,35 +218,35 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 161,
+  "processed_this_run": 5,
   "verified_this_run": 5,
-  "elapsed_seconds": 238.7,
-  "search_calls": 942,
+  "elapsed_seconds": 11.1,
+  "search_calls": 14,
   "search_circuit_open": false,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 942,
-      "successes": 942,
+      "calls": 14,
+      "successes": 14,
       "errors": 0,
-      "results": 1206
+      "results": 94
     },
     "ddgs:bing": {
-      "calls": 942,
-      "successes": 942,
+      "calls": 14,
+      "successes": 14,
       "errors": 0,
-      "results": 9159
+      "results": 122
     },
     "ddgs:brave": {
-      "calls": 760,
-      "successes": 760,
+      "calls": 4,
+      "successes": 4,
       "errors": 0,
-      "results": 5
+      "results": 4
     }
   },
   "http_stats": {
-    "requests": 355,
-    "success": 50,
-    "failures": 305,
-    "cache_hits": 581
+    "requests": 3,
+    "success": 0,
+    "failures": 3,
+    "cache_hits": 38
   }
 }
