@@ -104,8 +104,8 @@
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2885,
       "PENDING_ALGO_UPGRADE": 5,
-      "PENDING_RESEARCH": 506,
-      "PENDING_SEARCH_PROVIDER": 3,
+      "PENDING_RESEARCH": 504,
+      "PENDING_SEARCH_PROVIDER": 5,
       "VERIFIED": 24
     },
     "fertility_association": {
@@ -153,8 +153,8 @@
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2232,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 51,
-      "PENDING_SEARCH_PROVIDER": 6,
+      "PENDING_RESEARCH": 48,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 57
     },
     "ivf_unit": {
@@ -251,8 +251,8 @@
   },
   "processed_this_run": 7,
   "verified_this_run": 0,
-  "elapsed_seconds": 5.3,
-  "search_calls": 21,
+  "elapsed_seconds": 4.3,
+  "search_calls": 23,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
@@ -262,9 +262,9 @@
       "results": 0
     },
     "ddgs:bing": {
-      "calls": 20,
+      "calls": 21,
       "successes": 0,
-      "errors": 20,
+      "errors": 21,
       "results": 0
     },
     "ddgs:brave": {
@@ -274,16 +274,16 @@
       "results": 0
     },
     "ddgs:auto": {
-      "calls": 20,
+      "calls": 22,
       "successes": 0,
-      "errors": 20,
+      "errors": 22,
       "results": 0
     }
   },
   "http_stats": {
-    "requests": 1,
+    "requests": 0,
     "success": 0,
-    "failures": 1,
+    "failures": 0,
     "cache_hits": 2
   }
 }
