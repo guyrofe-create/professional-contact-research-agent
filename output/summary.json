@@ -55,8 +55,8 @@
     "clinic_manager": {
       "NO_VERIFIED_PUBLIC_EMAIL": 4,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 1,
-      "PENDING_SEARCH_PROVIDER": 3,
+      "PENDING_RESEARCH": 0,
+      "PENDING_SEARCH_PROVIDER": 4,
       "VERIFIED": 0
     },
     "community_clinic": {
@@ -153,8 +153,8 @@
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2232,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 54,
-      "PENDING_SEARCH_PROVIDER": 3,
+      "PENDING_RESEARCH": 51,
+      "PENDING_SEARCH_PROVIDER": 6,
       "VERIFIED": 57
     },
     "ivf_unit": {
@@ -249,28 +249,28 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 9,
+  "processed_this_run": 7,
   "verified_this_run": 0,
-  "elapsed_seconds": 5.2,
-  "search_calls": 22,
+  "elapsed_seconds": 5.3,
+  "search_calls": 21,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 22,
+      "calls": 21,
       "successes": 0,
-      "errors": 22,
+      "errors": 21,
       "results": 0
     },
     "ddgs:bing": {
-      "calls": 21,
+      "calls": 20,
       "successes": 0,
-      "errors": 21,
+      "errors": 20,
       "results": 0
     },
     "ddgs:brave": {
-      "calls": 21,
+      "calls": 20,
       "successes": 0,
-      "errors": 21,
+      "errors": 20,
       "results": 0
     },
     "ddgs:auto": {
@@ -281,9 +281,9 @@
     }
   },
   "http_stats": {
-    "requests": 3,
+    "requests": 1,
     "success": 0,
-    "failures": 3,
-    "cache_hits": 3
+    "failures": 1,
+    "cache_hits": 2
   }
 }
