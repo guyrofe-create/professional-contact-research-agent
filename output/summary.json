@@ -153,8 +153,8 @@
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2232,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 45,
-      "PENDING_SEARCH_PROVIDER": 12,
+      "PENDING_RESEARCH": 42,
+      "PENDING_SEARCH_PROVIDER": 15,
       "VERIFIED": 57
     },
     "ivf_unit": {
@@ -251,7 +251,7 @@
   },
   "processed_this_run": 7,
   "verified_this_run": 0,
-  "elapsed_seconds": 6.1,
+  "elapsed_seconds": 4.8,
   "search_calls": 20,
   "search_circuit_open": true,
   "provider_stats": {
