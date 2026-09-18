@@ -153,8 +153,8 @@
     "gynecologist": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2232,
       "PENDING_ALGO_UPGRADE": 0,
-      "PENDING_RESEARCH": 4,
-      "PENDING_SEARCH_PROVIDER": 53,
+      "PENDING_RESEARCH": 1,
+      "PENDING_SEARCH_PROVIDER": 56,
       "VERIFIED": 57
     },
     "ivf_unit": {
@@ -251,8 +251,8 @@
   },
   "processed_this_run": 6,
   "verified_this_run": 0,
-  "elapsed_seconds": 5.9,
-  "search_calls": 22,
+  "elapsed_seconds": 5.6,
+  "search_calls": 25,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
@@ -262,21 +262,21 @@
       "results": 0
     },
     "ddgs:bing": {
-      "calls": 21,
-      "successes": 0,
-      "errors": 21,
-      "results": 0
-    },
-    "ddgs:brave": {
-      "calls": 21,
-      "successes": 0,
-      "errors": 21,
-      "results": 0
-    },
-    "ddgs:auto": {
       "calls": 22,
       "successes": 0,
       "errors": 22,
+      "results": 0
+    },
+    "ddgs:brave": {
+      "calls": 24,
+      "successes": 0,
+      "errors": 24,
+      "results": 0
+    },
+    "ddgs:auto": {
+      "calls": 20,
+      "successes": 0,
+      "errors": 20,
       "results": 0
     }
   },
