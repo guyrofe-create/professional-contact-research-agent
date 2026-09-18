@@ -104,8 +104,8 @@
     "family_doctor": {
       "NO_VERIFIED_PUBLIC_EMAIL": 2885,
       "PENDING_ALGO_UPGRADE": 5,
-      "PENDING_RESEARCH": 502,
-      "PENDING_SEARCH_PROVIDER": 8,
+      "PENDING_RESEARCH": 501,
+      "PENDING_SEARCH_PROVIDER": 9,
       "VERIFIED": 24
     },
     "fertility_association": {
@@ -249,34 +249,34 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 6,
+  "processed_this_run": 7,
   "verified_this_run": 0,
-  "elapsed_seconds": 6.9,
-  "search_calls": 22,
+  "elapsed_seconds": 6.5,
+  "search_calls": 23,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 21,
-      "successes": 0,
-      "errors": 21,
-      "results": 0
-    },
-    "ddgs:bing": {
-      "calls": 21,
-      "successes": 0,
-      "errors": 21,
-      "results": 0
-    },
-    "ddgs:brave": {
       "calls": 22,
       "successes": 0,
       "errors": 22,
       "results": 0
     },
-    "ddgs:auto": {
+    "ddgs:bing": {
+      "calls": 22,
+      "successes": 0,
+      "errors": 22,
+      "results": 0
+    },
+    "ddgs:brave": {
       "calls": 21,
       "successes": 0,
       "errors": 21,
+      "results": 0
+    },
+    "ddgs:auto": {
+      "calls": 22,
+      "successes": 0,
+      "errors": 22,
       "results": 0
     }
   },
