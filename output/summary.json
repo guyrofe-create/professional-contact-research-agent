@@ -249,28 +249,28 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 7,
+  "processed_this_run": 6,
   "verified_this_run": 0,
-  "elapsed_seconds": 6.5,
-  "search_calls": 23,
+  "elapsed_seconds": 6.7,
+  "search_calls": 22,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 22,
+      "calls": 20,
       "successes": 0,
-      "errors": 22,
+      "errors": 20,
       "results": 0
     },
     "ddgs:bing": {
-      "calls": 22,
+      "calls": 20,
       "successes": 0,
-      "errors": 22,
+      "errors": 20,
       "results": 0
     },
     "ddgs:brave": {
-      "calls": 21,
+      "calls": 20,
       "successes": 0,
-      "errors": 21,
+      "errors": 20,
       "results": 0
     },
     "ddgs:auto": {
@@ -281,8 +281,8 @@
     }
   },
   "http_stats": {
-    "requests": 2,
-    "success": 2,
+    "requests": 1,
+    "success": 1,
     "failures": 0,
     "cache_hits": 0
   }
