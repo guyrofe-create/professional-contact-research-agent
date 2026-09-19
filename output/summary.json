@@ -249,41 +249,41 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 7,
+  "processed_this_run": 9,
   "verified_this_run": 0,
-  "elapsed_seconds": 7.3,
-  "search_calls": 24,
+  "elapsed_seconds": 6.0,
+  "search_calls": 20,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 22,
+      "calls": 20,
       "successes": 0,
-      "errors": 22,
+      "errors": 20,
       "results": 0
     },
     "ddgs:bing": {
-      "calls": 22,
+      "calls": 20,
       "successes": 0,
-      "errors": 22,
+      "errors": 20,
       "results": 0
     },
     "ddgs:brave": {
-      "calls": 24,
+      "calls": 20,
       "successes": 0,
-      "errors": 24,
+      "errors": 20,
       "results": 0
     },
     "ddgs:auto": {
-      "calls": 21,
+      "calls": 20,
       "successes": 0,
-      "errors": 21,
+      "errors": 20,
       "results": 0
     }
   },
   "http_stats": {
-    "requests": 1,
+    "requests": 4,
     "success": 1,
-    "failures": 0,
+    "failures": 3,
     "cache_hits": 0
   }
 }
