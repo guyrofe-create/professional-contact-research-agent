@@ -251,8 +251,8 @@
   },
   "processed_this_run": 6,
   "verified_this_run": 0,
-  "elapsed_seconds": 7.4,
-  "search_calls": 23,
+  "elapsed_seconds": 4.8,
+  "search_calls": 22,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
@@ -268,9 +268,9 @@
       "results": 0
     },
     "ddgs:brave": {
-      "calls": 23,
+      "calls": 21,
       "successes": 0,
-      "errors": 23,
+      "errors": 21,
       "results": 0
     },
     "ddgs:auto": {
@@ -281,9 +281,9 @@
     }
   },
   "http_stats": {
-    "requests": 2,
-    "success": 1,
-    "failures": 1,
+    "requests": 0,
+    "success": 0,
+    "failures": 0,
     "cache_hits": 0
   }
 }
