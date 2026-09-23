@@ -251,32 +251,32 @@
   },
   "processed_this_run": 6,
   "verified_this_run": 0,
-  "elapsed_seconds": 6.1,
-  "search_calls": 25,
+  "elapsed_seconds": 5.2,
+  "search_calls": 23,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 21,
+      "calls": 20,
       "successes": 0,
-      "errors": 21,
+      "errors": 20,
       "results": 0
     },
     "ddgs:bing": {
-      "calls": 21,
+      "calls": 20,
       "successes": 0,
-      "errors": 21,
+      "errors": 20,
       "results": 0
     },
     "ddgs:brave": {
-      "calls": 21,
+      "calls": 23,
       "successes": 0,
-      "errors": 21,
+      "errors": 23,
       "results": 0
     },
     "ddgs:auto": {
-      "calls": 24,
+      "calls": 20,
       "successes": 0,
-      "errors": 24,
+      "errors": 20,
       "results": 0
     }
   },
