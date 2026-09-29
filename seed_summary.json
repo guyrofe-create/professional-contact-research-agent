@@ -1,14 +1,14 @@
 {
   "discovery_version": 8,
-  "total": 7028,
+  "total": 7029,
   "previous": 7028,
-  "moh_records_refreshed": 5651,
-  "moh_targets_retained": 5101,
+  "moh_records_refreshed": 5652,
+  "moh_targets_retained": 5102,
   "ima_official_profiles": {
     "skipped": "full IMA specialty coverage already persisted"
   },
   "categories": {
-    "family_doctor": 3434,
+    "family_doctor": 3435,
     "gynecologist": 2360,
     "lactation": 451,
     "community_clinic": 130,
