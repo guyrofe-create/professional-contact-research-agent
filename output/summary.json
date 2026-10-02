@@ -252,19 +252,19 @@
   "processed_this_run": 6,
   "verified_this_run": 0,
   "elapsed_seconds": 6.1,
-  "search_calls": 24,
+  "search_calls": 25,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 21,
-      "successes": 0,
-      "errors": 21,
-      "results": 0
-    },
-    "ddgs:bing": {
       "calls": 22,
       "successes": 0,
       "errors": 22,
+      "results": 0
+    },
+    "ddgs:bing": {
+      "calls": 20,
+      "successes": 0,
+      "errors": 20,
       "results": 0
     },
     "ddgs:brave": {
