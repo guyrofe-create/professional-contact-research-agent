@@ -251,7 +251,7 @@
   },
   "processed_this_run": 6,
   "verified_this_run": 0,
-  "elapsed_seconds": 5.6,
+  "elapsed_seconds": 3.9,
   "search_calls": 20,
   "search_circuit_open": true,
   "provider_stats": {
@@ -284,6 +284,6 @@
     "requests": 0,
     "success": 0,
     "failures": 0,
-    "cache_hits": 0
+    "cache_hits": 2
   }
 }
