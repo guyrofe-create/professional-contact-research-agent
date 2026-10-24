@@ -256,27 +256,27 @@
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
-      "calls": 20,
-      "successes": 0,
-      "errors": 20,
-      "results": 0
-    },
-    "ddgs:bing": {
       "calls": 21,
       "successes": 0,
       "errors": 21,
       "results": 0
     },
-    "ddgs:brave": {
-      "calls": 23,
+    "ddgs:bing": {
+      "calls": 24,
       "successes": 0,
-      "errors": 23,
+      "errors": 24,
+      "results": 0
+    },
+    "ddgs:brave": {
+      "calls": 21,
+      "successes": 0,
+      "errors": 21,
       "results": 0
     },
     "ddgs:auto": {
-      "calls": 22,
+      "calls": 20,
       "successes": 0,
-      "errors": 22,
+      "errors": 20,
       "results": 0
     }
   },
