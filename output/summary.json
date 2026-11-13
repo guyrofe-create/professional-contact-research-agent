@@ -249,10 +249,10 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 4,
+  "processed_this_run": 7,
   "verified_this_run": 0,
-  "elapsed_seconds": 3.8,
-  "search_calls": 21,
+  "elapsed_seconds": 3.5,
+  "search_calls": 20,
   "search_circuit_open": true,
   "provider_stats": {
     "ddgs:yahoo": {
@@ -268,9 +268,9 @@
       "results": 0
     },
     "ddgs:brave": {
-      "calls": 21,
+      "calls": 20,
       "successes": 0,
-      "errors": 21,
+      "errors": 20,
       "results": 0
     },
     "ddgs:auto": {
