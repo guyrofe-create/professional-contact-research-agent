@@ -249,9 +249,9 @@
       "VERIFIED": 10
     }
   },
-  "processed_this_run": 6,
+  "processed_this_run": 4,
   "verified_this_run": 0,
-  "elapsed_seconds": 6.1,
+  "elapsed_seconds": 3.5,
   "search_calls": 20,
   "search_circuit_open": true,
   "provider_stats": {
@@ -281,9 +281,9 @@
     }
   },
   "http_stats": {
-    "requests": 2,
+    "requests": 0,
     "success": 0,
-    "failures": 2,
+    "failures": 0,
     "cache_hits": 0
   }
 }
